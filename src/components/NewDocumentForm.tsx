@@ -6,11 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { documentService } from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
-import { Document } from '@/types/document';
+import { Document, DocumentCategory } from '@/types/document';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const NewDocumentForm: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('Specialebeskrivelser');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,6 +35,7 @@ const NewDocumentForm: React.FC = () => {
       const newDocument: Omit<Document, 'id' | 'createdAt' | 'updatedAt'> = {
         title,
         description,
+        category,
         sections: []
       };
       
@@ -79,6 +82,22 @@ const NewDocumentForm: React.FC = () => {
             className="w-full"
             rows={4}
           />
+        </div>
+        
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium mb-1">Category</label>
+          <Select
+            value={category}
+            onValueChange={(value) => setCategory(value as DocumentCategory)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Specialebeskrivelser">Specialebeskrivelser</SelectItem>
+              <SelectItem value="Målbeskrivelser">Målbeskrivelser</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="text-sm text-gray-500 mt-1">
             You can add document sections after creating the document.
           </p>

@@ -7,6 +7,7 @@ const mockDocuments: Document[] = [
     id: '1',
     title: 'Project Proposal',
     description: 'A comprehensive project proposal for the new client',
+    category: 'Specialebeskrivelser',
     sections: [
       {
         id: '101',
@@ -43,6 +44,7 @@ const mockDocuments: Document[] = [
     id: '2',
     title: 'Meeting Minutes',
     description: 'Minutes from the weekly team meeting',
+    category: 'Målbeskrivelser',
     sections: [
       {
         id: '201',
@@ -80,6 +82,16 @@ export const documentService = {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(mockDocuments);
+      }, 500);
+    });
+  },
+
+  // Get documents by category
+  getDocumentsByCategory: async (category: string): Promise<Document[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const filteredDocs = mockDocuments.filter(doc => doc.category === category);
+        resolve(filteredDocs);
       }, 500);
     });
   },

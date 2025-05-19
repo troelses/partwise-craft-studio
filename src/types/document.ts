@@ -13,7 +13,10 @@ export interface Document {
   id: string;
   title: string;
   description: string;
+  category: 'Specialebeskrivelser' | 'Målbeskrivelser';
   sections: DocumentSection[];
   createdAt: string;
   updatedAt: string;
 }
+
+export type DocumentCategory = 'Specialebeskrivelser' | 'Målbeskrivelser';
