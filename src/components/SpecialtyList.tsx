@@ -46,26 +46,14 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
   activeSpecialty, 
   onSpecialtyChange 
 }) => {
-  // Split specialties into rows for the table
-  const specialtiesInRows = () => {
-    const result = [];
-    // Create rows with 3 specialties per row
-    for (let i = 0; i < specialties.length; i += 3) {
-      result.push(specialties.slice(i, i + 3));
-    }
-    return result;
-  };
-
   return (
     <div className="mb-6">
       <h3 className="text-sm font-medium text-gray-500 mb-2">Specialer</h3>
-      <ScrollArea className="h-[250px]">
-        <Table className="border-collapse">
+      <ScrollArea className="h-[350px]">
+        <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-1/3">Specialer</TableHead>
-              <TableHead className="w-1/3">Specialer</TableHead>
-              <TableHead className="w-1/3">Specialer</TableHead>
+              <TableHead>Specialer</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -78,31 +66,19 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
                 {activeSpecialty === 'All' && <Check className="h-4 w-4 text-blue-600" />}
                 <span>Alle specialer</span>
               </TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
             </TableRow>
             
-            {/* Specialty rows */}
-            {specialtiesInRows().map((row, rowIndex) => (
-              <TableRow key={`row-${rowIndex}`}>
-                {row.map((specialty, colIndex) => (
-                  <TableCell 
-                    key={specialty} 
-                    className={`cursor-pointer ${
-                      activeSpecialty === specialty ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
-                    onClick={() => onSpecialtyChange(specialty)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {activeSpecialty === specialty && <Check className="h-4 w-4 text-blue-600" />}
-                      <span>{specialty}</span>
-                    </div>
-                  </TableCell>
-                ))}
-                {/* Add empty cells if the row doesn't have 3 specialties */}
-                {Array.from({ length: 3 - row.length }).map((_, index) => (
-                  <TableCell key={`empty-${rowIndex}-${index}`}></TableCell>
-                ))}
+            {/* One specialty per row */}
+            {specialties.map((specialty) => (
+              <TableRow 
+                key={specialty}
+                className={`cursor-pointer ${activeSpecialty === specialty ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                onClick={() => onSpecialtyChange(specialty)}
+              >
+                <TableCell className="flex items-center gap-2">
+                  {activeSpecialty === specialty && <Check className="h-4 w-4 text-blue-600" />}
+                  <span>{specialty}</span>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
