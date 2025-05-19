@@ -131,7 +131,7 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
               <TableRow 
                 key={specialty}
                 className={`cursor-pointer ${activeSpecialty === specialty ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                onClick={() => onSpecialtyChange(specialty as Specialty)}
+                onClick={() => onSpecialtyChange(specialty)}
               >
                 <TableCell className="flex items-center gap-2">
                   {activeSpecialty === specialty && <Check className="h-4 w-4 text-blue-600" />}
@@ -139,13 +139,13 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={(e) => handleView(specialty as Specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleView(specialty, e)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(specialty as Specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(specialty, e)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(specialty as Specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(specialty, e)}>
                       <Share className="h-4 w-4" />
                     </Button>
                   </div>

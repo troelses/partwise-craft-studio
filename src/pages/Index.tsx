@@ -38,7 +38,7 @@ const Index = () => {
           title: doc.title,
           description: doc.introduction || '',
           category: 'Specialebeskrivelser', // Default category, adjust as needed
-          specialty: doc.specialty as Specialty,
+          specialty: doc.specialty,
           sections: [], // We're not fetching sections in this query
           createdAt: doc.created_at,
           updatedAt: doc.updated_at || doc.created_at,

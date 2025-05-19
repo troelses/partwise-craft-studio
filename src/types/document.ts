@@ -1,4 +1,3 @@
-
 export interface DocumentSection {
   id: string;
   title: string;
@@ -22,32 +21,5 @@ export interface Document {
 
 export type DocumentCategory = 'Specialebeskrivelser' | 'Målbeskrivelser';
 
-export type Specialty = 
-  | 'Akutmedicin'
-  | 'Almen medicin'
-  | 'Anæstesiologi'
-  | 'Arbejdsmedicin'
-  | 'Børne- og ungdomspsykiatri'
-  | 'Dermato-venerologi'
-  | 'Gynækologi og obstetrik'
-  | 'Intern medicinske specialer'
-  | 'Kirurgiske specialer'
-  | 'Klinisk biokemi'
-  | 'Klinisk farmakologi'
-  | 'Klinisk fysiologi og nuklearmedicin'
-  | 'Klinisk genetik'
-  | 'Klinisk immunologi'
-  | 'Klinisk mikrobiologi'
-  | 'Klinisk onkologi'
-  | 'Neurokirurgi'
-  | 'Neurologi'
-  | 'Oftalmologi'
-  | 'Ortopædisk kirurgi'
-  | 'Oto-rhino-laryngologi'
-  | 'Patologisk anatomi og cytologi'
-  | 'Psykiatri'
-  | 'Pædiatri'
-  | 'Radiologi'
-  | 'Retsmedicin'
-  | 'Samfundsmedicin'
-  | 'All';
+// Update the Specialty type to accept any string
+export type Specialty = string;
