@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import DocumentList from '@/components/DocumentList';
+import SpecialtyList from '@/components/SpecialtyList';
 import { Button } from '@/components/ui/button';
-import { Document, DocumentCategory } from '@/types/document';
+import { Document, DocumentCategory, Specialty } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { PlusCircle, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory>('Specialebeskrivelser');
+  const [activeSpecialty, setActiveSpecialty] = useState<Specialty>('All');
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -32,9 +34,10 @@ const Index = () => {
     fetchDocuments();
   }, []);
 
-  // Filter documents based on search query and active category
+  // Filter documents based on search query, active category, and specialty
   const filteredDocuments = documents.filter(doc => 
     doc.category === activeCategory &&
+    (activeSpecialty === 'All' || doc.specialty === activeSpecialty) &&
     (doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
      doc.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -82,6 +85,12 @@ const Index = () => {
                 Målbeskrivelser
               </TabsTrigger>
             </TabsList>
+            
+            <SpecialtyList 
+              activeCategory={activeCategory} 
+              activeSpecialty={activeSpecialty} 
+              onSpecialtyChange={setActiveSpecialty}
+            />
             
             <TabsContent value="Specialebeskrivelser">
               <DocumentList 

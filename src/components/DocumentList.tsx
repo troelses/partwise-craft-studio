@@ -64,6 +64,10 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => 
     }
   };
 
+  const getSpecialtyColorClass = () => {
+    return 'bg-purple-100 text-purple-800';
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
       {documents.map((doc) => (
@@ -85,6 +89,11 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => 
                 <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColorClass(doc.category)}`}>
                   {doc.category}
                 </span>
+                {doc.specialty && doc.specialty !== 'All' && (
+                  <span className={`text-xs px-2 py-1 rounded-full ${getSpecialtyColorClass()}`}>
+                    {doc.specialty}
+                  </span>
+                )}
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                   {doc.sections.length} section{doc.sections.length !== 1 ? 's' : ''}
                 </span>

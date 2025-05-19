@@ -6,13 +6,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { documentService } from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
-import { Document, DocumentCategory } from '@/types/document';
+import { Document, DocumentCategory, Specialty } from '@/types/document';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const specialties: Specialty[] = [
+  'Akutmedicin',
+  'Almen medicin',
+  'Anæstesiologi',
+  'Arbejdsmedicin',
+  'Børne- og ungdomspsykiatri',
+  'Dermato-venerologi',
+  'Gynækologi og obstetrik',
+  'Intern medicinske specialer',
+  'Kirurgiske specialer',
+  'Klinisk biokemi',
+  'Klinisk farmakologi',
+  'Klinisk fysiologi og nuklearmedicin',
+  'Klinisk genetik',
+  'Klinisk immunologi',
+  'Klinisk mikrobiologi',
+  'Klinisk onkologi',
+  'Neurokirurgi',
+  'Neurologi',
+  'Oftalmologi',
+  'Ortopædisk kirurgi',
+  'Oto-rhino-laryngologi',
+  'Patologisk anatomi og cytologi',
+  'Psykiatri',
+  'Pædiatri',
+  'Radiologi',
+  'Retsmedicin',
+  'Samfundsmedicin',
+];
 
 const NewDocumentForm: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('Specialebeskrivelser');
+  const [specialty, setSpecialty] = useState<Specialty>('Akutmedicin');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,6 +68,7 @@ const NewDocumentForm: React.FC = () => {
         title,
         description,
         category,
+        specialty,
         sections: []
       };
       
@@ -98,9 +131,27 @@ const NewDocumentForm: React.FC = () => {
               <SelectItem value="Målbeskrivelser">Målbeskrivelser</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-sm text-gray-500 mt-1">
-            You can add document sections after creating the document.
-          </p>
+        </div>
+        
+        <div>
+          <label htmlFor="specialty" className="block text-sm font-medium mb-1">Specialty</label>
+          <Select
+            value={specialty}
+            onValueChange={(value) => setSpecialty(value as Specialty)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a specialty" />
+            </SelectTrigger>
+            <SelectContent>
+              <ScrollArea className="h-[200px]">
+                {specialties.map((spec) => (
+                  <SelectItem key={spec} value={spec}>
+                    {spec}
+                  </SelectItem>
+                ))}
+              </ScrollArea>
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="flex justify-end space-x-3">
