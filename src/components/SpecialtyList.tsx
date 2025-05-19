@@ -1,40 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Specialty } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Check, Eye, Pencil, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const specialties: Specialty[] = [
-  'Akutmedicin',
-  'Almen medicin',
-  'Anæstesiologi',
-  'Arbejdsmedicin',
-  'Børne- og ungdomspsykiatri',
-  'Dermato-venerologi',
-  'Gynækologi og obstetrik',
-  'Intern medicinske specialer',
-  'Kirurgiske specialer',
-  'Klinisk biokemi',
-  'Klinisk farmakologi',
-  'Klinisk fysiologi og nuklearmedicin',
-  'Klinisk genetik',
-  'Klinisk immunologi',
-  'Klinisk mikrobiologi',
-  'Klinisk onkologi',
-  'Neurokirurgi',
-  'Neurologi',
-  'Oftalmologi',
-  'Ortopædisk kirurgi',
-  'Oto-rhino-laryngologi',
-  'Patologisk anatomi og cytologi',
-  'Psykiatri',
-  'Pædiatri',
-  'Radiologi',
-  'Retsmedicin',
-  'Samfundsmedicin',
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SpecialtyListProps {
   activeCategory: string;
@@ -47,6 +19,41 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
   activeSpecialty, 
   onSpecialtyChange 
 }) => {
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('training_documents')
+          .select('specialty')
+          .order('specialty');
+        
+        if (error) {
+          throw error;
+        }
+
+        // Extract unique specialties
+        const uniqueSpecialties = [...new Set(data.map(doc => doc.specialty))];
+        setSpecialties(uniqueSpecialties);
+      } catch (error) {
+        console.error('Error fetching specialties:', error);
+        toast({
+          title: "Error",
+          description: "Could not load specialties",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSpecialties();
+  }, [toast]);
+
   const handleView = (specialty: Specialty, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log(`View ${specialty}`);
@@ -101,12 +108,30 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
               </TableCell>
             </TableRow>
             
+            {/* Loading state */}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center py-4">
+                  Loading specialties...
+                </TableCell>
+              </TableRow>
+            )}
+
+            {/* Error state if no specialties */}
+            {!isLoading && specialties.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center py-4">
+                  No specialties found
+                </TableCell>
+              </TableRow>
+            )}
+            
             {/* One specialty per row */}
-            {specialties.map((specialty) => (
+            {!isLoading && specialties.map((specialty) => (
               <TableRow 
                 key={specialty}
                 className={`cursor-pointer ${activeSpecialty === specialty ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                onClick={() => onSpecialtyChange(specialty)}
+                onClick={() => onSpecialtyChange(specialty as Specialty)}
               >
                 <TableCell className="flex items-center gap-2">
                   {activeSpecialty === specialty && <Check className="h-4 w-4 text-blue-600" />}
@@ -114,13 +139,13 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={(e) => handleView(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleView(specialty as Specialty, e)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(specialty as Specialty, e)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(specialty as Specialty, e)}>
                       <Share className="h-4 w-4" />
                     </Button>
                   </div>

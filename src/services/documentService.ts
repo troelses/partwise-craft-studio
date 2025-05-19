@@ -1,4 +1,4 @@
-import { Document, DocumentCategory, Specialty } from '@/types/document';
+import { Document, DocumentCategory, DocumentSection, Specialty } from '@/types/document';
 
 // Mock documents with required specialty property
 const mockDocuments: Document[] = [

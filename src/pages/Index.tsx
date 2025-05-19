@@ -5,11 +5,12 @@ import DocumentList from '@/components/DocumentList';
 import SpecialtyList from '@/components/SpecialtyList';
 import { Button } from '@/components/ui/button';
 import { Document, DocumentCategory, Specialty } from '@/types/document';
-import { documentService } from '@/services/documentService';
 import { PlusCircle, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -17,26 +18,51 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory>('Specialebeskrivelser');
   const [activeSpecialty, setActiveSpecialty] = useState<Specialty>('All');
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
         setIsLoading(true);
-        const docs = await documentService.getDocuments();
-        setDocuments(docs);
+        const { data, error } = await supabase
+          .from('training_documents')
+          .select('*');
+
+        if (error) {
+          throw error;
+        }
+
+        // Transform Supabase data to match Document type
+        const transformedDocs: Document[] = data.map(doc => ({
+          id: doc.id.toString(),
+          title: doc.title,
+          description: doc.introduction || '',
+          category: 'Specialebeskrivelser', // Default category, adjust as needed
+          specialty: doc.specialty as Specialty,
+          sections: [], // We're not fetching sections in this query
+          createdAt: doc.created_at,
+          updatedAt: doc.updated_at || doc.created_at,
+        }));
+
+        setDocuments(transformedDocs);
       } catch (error) {
         console.error('Failed to fetch documents:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch documents",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchDocuments();
-  }, []);
+  }, [toast]);
 
   // Filter documents based on search query, active category, and specialty
   const filteredDocuments = documents.filter(doc => 
-    doc.category === activeCategory &&
+    (activeCategory === 'All' || doc.category === activeCategory) &&
     (activeSpecialty === 'All' || doc.specialty === activeSpecialty) &&
     (doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
      doc.description.toLowerCase().includes(searchQuery.toLowerCase()))
