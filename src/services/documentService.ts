@@ -1,72 +1,82 @@
+import { Document, DocumentCategory, Specialty } from '@/types/document';
 
-import { Document, DocumentSection } from '@/types/document';
-
-// Mock documents data
+// Mock documents with required specialty property
 const mockDocuments: Document[] = [
   {
     id: '1',
-    title: 'Project Proposal',
-    description: 'A comprehensive project proposal for the new client',
+    title: 'Specialebeskrivelse: Kardiologi',
+    description: 'Beskrivelse af specialet kardiologi',
     category: 'Specialebeskrivelser',
+    specialty: 'Intern medicinske specialer',
     sections: [
       {
-        id: '101',
-        title: 'Executive Summary',
-        content: 'This proposal outlines our approach to implementing the new system.',
+        id: '1-1',
+        title: 'Introduktion',
+        content: 'Dette er en introduktion til kardiologi...',
         order: 1,
         documentId: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: '2023-05-01T10:30:00Z',
+        updatedAt: '2023-05-01T10:30:00Z',
       },
       {
-        id: '102',
+        id: '1-2',
         title: 'Project Scope',
         content: 'The project will include the following deliverables...',
         order: 2,
         documentId: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: '2023-05-01T10:30:00Z',
+        updatedAt: '2023-05-01T10:30:00Z',
       },
       {
-        id: '103',
+        id: '1-3',
         title: 'Timeline',
         content: 'We anticipate completing this project within 3 months...',
         order: 3,
         documentId: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: '2023-05-01T10:30:00Z',
+        updatedAt: '2023-05-01T10:30:00Z',
       }
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2023-05-01T10:30:00Z',
+    updatedAt: '2023-05-01T10:30:00Z',
   },
   {
     id: '2',
-    title: 'Meeting Minutes',
-    description: 'Minutes from the weekly team meeting',
+    title: 'Målbeskrivelse: Karkirurgi',
+    description: 'Målbeskrivelse for karkirurgi',
     category: 'Målbeskrivelser',
+    specialty: 'Kirurgiske specialer',
     sections: [
       {
-        id: '201',
-        title: 'Attendees',
-        content: 'John Doe, Jane Smith, Robert Johnson',
+        id: '2-1',
+        title: 'Kompetencemål',
+        content: 'Efter endt uddannelse skal lægen kunne...',
         order: 1,
         documentId: '2',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: '2023-04-15T14:20:00Z',
+        updatedAt: '2023-04-15T14:20:00Z',
       },
       {
-        id: '202',
-        title: 'Agenda Items',
-        content: '1. Project updates\n2. Budget review\n3. Next steps',
+        id: '2-2',
+        title: 'Attendees',
+        content: 'John Doe, Jane Smith, Robert Johnson',
         order: 2,
         documentId: '2',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: '2023-04-15T14:20:00Z',
+        updatedAt: '2023-04-15T14:20:00Z',
+      },
+      {
+        id: '2-3',
+        title: 'Agenda Items',
+        content: '1. Project updates\n2. Budget review\n3. Next steps',
+        order: 3,
+        documentId: '2',
+        createdAt: '2023-04-15T14:20:00Z',
+        updatedAt: '2023-04-15T14:20:00Z',
       }
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2023-04-15T14:20:00Z',
+    updatedAt: '2023-04-15T14:20:00Z',
   }
 ];
 
