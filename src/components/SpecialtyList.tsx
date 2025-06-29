@@ -9,6 +9,14 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface Document {
+  id: string;
+  title: string;
+  template_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface SpecialtyListProps {
   activeCategory: string;
   activeSpecialty: Specialty;
@@ -20,37 +28,33 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
   activeSpecialty, 
   onSpecialtyChange 
 }) => {
-  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSpecialties = async () => {
+    const fetchDocuments = async () => {
       try {
         setIsLoading(true);
         
-        // Fetch from specialer table for the specialty names
+        // Fetch documents with the specific template ID
         const { data, error } = await supabase
-          .from('specialer')
-          .select('Specialenavn')
-          .order('Specialenavn');
+          .from('documents')
+          .select('*')
+          .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+          .order('title');
         
         if (error) {
           throw error;
         }
 
-        // Extract unique specialties, filtering out null values
-        const uniqueSpecialties = data
-          .map(item => item.Specialenavn)
-          .filter(specialty => specialty !== null) as string[];
-        
-        setSpecialties(uniqueSpecialties);
+        setDocuments(data || []);
       } catch (error) {
-        console.error('Error fetching specialties:', error);
+        console.error('Error fetching documents:', error);
         toast({
           title: "Error",
-          description: "Could not load specialties",
+          description: "Could not load documents",
           variant: "destructive"
         });
       } finally {
@@ -58,76 +62,22 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
       }
     };
 
-    fetchSpecialties();
+    fetchDocuments();
   }, [toast]);
 
-  const handleView = async (specialty: string, e: React.MouseEvent) => {
+  const handleView = async (documentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    try {
-      // Check if a document already exists for this specialty
-      const { data: existingDoc, error } = await supabase
-        .from('training_documents')
-        .select('id')
-        .eq('specialty', specialty)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking for existing document:', error);
-        toast({
-          title: "Error",
-          description: "Failed to check for existing document",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (existingDoc) {
-        // Navigate to existing document
-        navigate(`/documents/${existingDoc.id}`);
-      } else {
-        // Create new document with template
-        const { data: newDoc, error: createError } = await supabase
-          .from('training_documents')
-          .insert({
-            title: `${specialty} - Specialebeskrivelse`,
-            specialty: specialty,
-            introduction: `Specialebeskrivelse for ${specialty}`
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating document:', createError);
-          toast({
-            title: "Error",
-            description: "Failed to create new document",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Navigate to the new document
-        navigate(`/documents/${newDoc.id}`);
-      }
-    } catch (error) {
-      console.error('Error handling view:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open document",
-        variant: "destructive",
-      });
-    }
+    navigate(`/documents/${documentId}`);
   };
 
-  const handleEdit = (specialty: string, e: React.MouseEvent) => {
+  const handleEdit = (documentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    handleView(specialty, e); // For now, edit is the same as view
+    handleView(documentId, e); // For now, edit is the same as view
   };
 
-  const handleShare = (specialty: string, e: React.MouseEvent) => {
+  const handleShare = (documentTitle: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Share ${specialty}`);
+    console.log(`Share ${documentTitle}`);
     toast({
       title: "Info",
       description: "Share functionality coming soon",
@@ -140,7 +90,7 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Specialer</TableHead>
+              <TableHead>Specialebeskrivelser</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -149,40 +99,40 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={2} className="text-center py-4">
-                  Loading specialties...
+                  Loading documents...
                 </TableCell>
               </TableRow>
             )}
 
-            {/* Error state if no specialties */}
-            {!isLoading && specialties.length === 0 && (
+            {/* Error state if no documents */}
+            {!isLoading && documents.length === 0 && (
               <TableRow>
                 <TableCell colSpan={2} className="text-center py-4">
-                  No specialties found
+                  No documents found
                 </TableCell>
               </TableRow>
             )}
             
-            {/* One specialty per row */}
-            {!isLoading && specialties.map((specialty) => (
+            {/* One document per row */}
+            {!isLoading && documents.map((document) => (
               <TableRow 
-                key={specialty}
-                className={`cursor-pointer ${activeSpecialty === specialty ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                onClick={() => onSpecialtyChange(specialty)}
+                key={document.id}
+                className={`cursor-pointer ${activeSpecialty === document.title ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                onClick={() => onSpecialtyChange(document.title)}
               >
                 <TableCell className="flex items-center gap-2">
-                  {activeSpecialty === specialty && <Check className="h-4 w-4 text-blue-600" />}
-                  <span>{specialty}</span>
+                  {activeSpecialty === document.title && <Check className="h-4 w-4 text-blue-600" />}
+                  <span>{document.title}</span>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={(e) => handleView(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleView(document.id, e)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleEdit(document.id, e)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(specialty, e)}>
+                    <Button variant="ghost" size="sm" onClick={(e) => handleShare(document.title, e)}>
                       <Share className="h-4 w-4" />
                     </Button>
                   </div>

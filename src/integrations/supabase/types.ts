@@ -119,6 +119,83 @@ export type Database = {
           },
         ]
       }
+      document_sections: {
+        Row: {
+          content: string
+          document_id: string | null
+          id: string
+          last_edited_by: string | null
+          template_section_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string
+          document_id?: string | null
+          id?: string
+          last_edited_by?: string | null
+          template_section_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          document_id?: string | null
+          id?: string
+          last_edited_by?: string | null
+          template_section_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_sections_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_sections_template_section_id_fkey"
+            columns: ["template_section_id"]
+            isOneToOne: false
+            referencedRelation: "template_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string | null
+          id: string
+          owner_id: string | null
+          template_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          owner_id?: string | null
+          template_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          owner_id?: string | null
+          template_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_strategies: {
         Row: {
           competence_id: number | null
@@ -201,6 +278,59 @@ export type Database = {
           created_at?: string
           id?: number
           Specialenavn?: string | null
+        }
+        Relationships: []
+      }
+      template_sections: {
+        Row: {
+          id: string
+          level: number
+          name: string
+          position: number
+          template_id: string | null
+        }
+        Insert: {
+          id?: string
+          level?: number
+          name: string
+          position: number
+          template_id?: string | null
+        }
+        Update: {
+          id?: string
+          level?: number
+          name?: string
+          position?: number
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
         }
         Relationships: []
       }
