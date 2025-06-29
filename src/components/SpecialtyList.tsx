@@ -61,13 +61,9 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
     fetchSpecialties();
   }, [toast]);
 
-  const handleView = async (specialty: Specialty, e: React.MouseEvent) => {
+  const handleView = async (specialty: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (specialty === 'All') {
-      return;
-    }
-
     try {
       // Check if a document already exists for this specialty
       const { data: existingDoc, error } = await supabase
@@ -124,12 +120,12 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
     }
   };
 
-  const handleEdit = (specialty: Specialty, e: React.MouseEvent) => {
+  const handleEdit = (specialty: string, e: React.MouseEvent) => {
     e.stopPropagation();
     handleView(specialty, e); // For now, edit is the same as view
   };
 
-  const handleShare = (specialty: Specialty, e: React.MouseEvent) => {
+  const handleShare = (specialty: string, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log(`Share ${specialty}`);
     toast({
@@ -140,7 +136,6 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
 
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-medium text-gray-500 mb-2">Specialer</h3>
       <ScrollArea className="h-[350px]">
         <Table>
           <TableHeader>
@@ -150,30 +145,6 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Special row for "All specialties" option */}
-            <TableRow 
-              className={`cursor-pointer ${activeSpecialty === 'All' ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-              onClick={() => onSpecialtyChange('All')}
-            >
-              <TableCell className="flex items-center gap-2">
-                {activeSpecialty === 'All' && <Check className="h-4 w-4 text-blue-600" />}
-                <span>Alle specialer</span>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={(e) => handleView('All', e)}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={(e) => handleEdit('All', e)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={(e) => handleShare('All', e)}>
-                    <Share className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-            
             {/* Loading state */}
             {isLoading && (
               <TableRow>
