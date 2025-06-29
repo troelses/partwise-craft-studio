@@ -6,10 +6,13 @@ import {
   PlusCircle, 
   Settings, 
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,9 +21,37 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const location = useLocation();
+  const { toast } = useToast();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to sign out",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Successfully signed out",
+        });
+        // Force page reload for clean state
+        window.location.href = '/auth';
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while signing out",
+        variant: "destructive"
+      });
+    }
   };
 
   const navItems = [
@@ -90,7 +121,7 @@ const Layout = ({ children }: LayoutProps) => {
           <Link to="/documents/new">
             <Button 
               className={cn(
-                "bg-white text-document-blue hover:bg-gray-100 w-full",
+                "bg-white text-document-blue hover:bg-gray-100 w-full mb-2",
                 sidebarCollapsed && "p-2"
               )}
             >
@@ -98,6 +129,19 @@ const Layout = ({ children }: LayoutProps) => {
               {!sidebarCollapsed && <span className="ml-2">New Document</span>}
             </Button>
           </Link>
+          
+          {/* Sign out button */}
+          <Button 
+            onClick={handleSignOut}
+            variant="ghost"
+            className={cn(
+              "w-full text-white hover:bg-white/10",
+              sidebarCollapsed && "p-2"
+            )}
+          >
+            <LogOut className="h-5 w-5" />
+            {!sidebarCollapsed && <span className="ml-2">Sign Out</span>}
+          </Button>
         </div>
       </aside>
 
