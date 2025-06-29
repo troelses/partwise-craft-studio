@@ -9,7 +9,7 @@ export const authService = {
     if (!user) return null;
 
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('user_profiles' as any)
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -38,7 +38,7 @@ export const authService = {
   // Get all users (admin only)
   getAllUsers: async (): Promise<UserProfile[]> => {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('user_profiles' as any)
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -47,7 +47,7 @@ export const authService = {
       return [];
     }
 
-    return data.map(profile => ({
+    return data.map((profile: any) => ({
       id: profile.id,
       userId: profile.user_id,
       email: profile.email,
@@ -60,7 +60,7 @@ export const authService = {
   // Update user role (admin only)
   updateUserRole: async (userId: string, role: UserRole): Promise<boolean> => {
     const { error } = await supabase
-      .from('user_profiles')
+      .from('user_profiles' as any)
       .update({ role, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
 
@@ -83,7 +83,7 @@ export const authService = {
 
     // Check specific permissions
     let query = supabase
-      .from('user_permissions')
+      .from('user_permissions' as any)
       .select('*')
       .eq('user_id', user.id)
       .eq('document_id', documentId);
@@ -122,7 +122,7 @@ export const authService = {
     sectionId?: string
   ): Promise<boolean> => {
     const { error } = await supabase
-      .from('user_permissions')
+      .from('user_permissions' as any)
       .upsert({
         user_id: userId,
         document_id: documentId,
@@ -143,7 +143,7 @@ export const authService = {
   // Revoke permissions (admin only)
   revokePermissions: async (userId: string, documentId: string, sectionId?: string): Promise<boolean> => {
     let query = supabase
-      .from('user_permissions')
+      .from('user_permissions' as any)
       .delete()
       .eq('user_id', userId)
       .eq('document_id', documentId);
