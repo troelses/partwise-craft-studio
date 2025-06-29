@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Specialebeskrivelser from "./pages/Specialebeskrivelser";
+import Maalbeskrivelser from "./pages/Maalbeskrivelser";
 import DocumentView from "./pages/DocumentView";
 import NewDocument from "./pages/NewDocument";
 import Settings from "./pages/Settings";
@@ -24,6 +26,8 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+          <Route path="/specialebeskrivelser" element={<AuthGuard><Specialebeskrivelser /></AuthGuard>} />
+          <Route path="/maalbeskrivelser" element={<AuthGuard><Maalbeskrivelser /></AuthGuard>} />
           <Route path="/documents/:id" element={<AuthGuard><DocumentView /></AuthGuard>} />
           <Route path="/documents/new" element={<AuthGuard><NewDocument /></AuthGuard>} />
           <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />

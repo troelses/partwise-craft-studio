@@ -6,7 +6,7 @@ import { Document } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const Index = () => {
+const Specialebeskrivelser = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -62,8 +62,8 @@ const Index = () => {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Documents</h1>
-          <p className="text-gray-500 mt-2">Overview of all documents in the system</p>
+          <h1 className="text-3xl font-bold text-gray-900">Specialebeskrivelser</h1>
+          <p className="text-gray-500 mt-2">Manage your specialty descriptions</p>
         </div>
 
         <DocumentList documents={documents} isLoading={isLoading} />
@@ -72,4 +72,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Specialebeskrivelser;
