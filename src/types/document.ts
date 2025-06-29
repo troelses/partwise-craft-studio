@@ -6,6 +6,7 @@ export interface DocumentSection {
   documentId: string;
   createdAt: string;
   updatedAt: string;
+  templateSectionId?: string;
 }
 
 export interface Document {

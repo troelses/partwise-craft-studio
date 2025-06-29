@@ -70,7 +70,7 @@ export const documentService = {
 
       // Create a map of existing sections by template_section_id
       const existingSectionsMap = new Map();
-      existingSections?.forEach(section => {
+      (existingSections || []).forEach(section => {
         if (section.template_section_id) {
           existingSectionsMap.set(section.template_section_id, section);
         }
@@ -198,7 +198,7 @@ export const documentService = {
         .from('document_sections')
         .select('id')
         .eq('document_id', section.documentId)
-        .eq('template_section_id', section.templateSectionId)
+        .eq('template_section_id', section.templateSectionId || '')
         .single();
 
       if (existingSection) {
@@ -218,7 +218,7 @@ export const documentService = {
           .from('document_sections')
           .insert({
             document_id: section.documentId,
-            template_section_id: section.templateSectionId,
+            template_section_id: section.templateSectionId || '',
             content: section.content,
             updated_at: new Date().toISOString(),
           });

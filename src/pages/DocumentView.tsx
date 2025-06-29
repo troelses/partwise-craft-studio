@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import DocumentEditor from '@/components/DocumentEditor';
 import { Document } from '@/types/document';
@@ -13,10 +13,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 const DocumentView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+
+  // Determine the back path based on the referring page or document category
+  const getBackPath = () => {
+    const referrer = location.state?.from;
+    if (referrer === '/maalbeskrivelser') {
+      return '/maalbeskrivelser';
+    }
+    // Default to specialebeskrivelser since that's where documents are currently stored
+    return '/specialebeskrivelser';
+  };
+
+  const getBackLabel = () => {
+    const backPath = getBackPath();
+    if (backPath === '/maalbeskrivelser') {
+      return 'Back to Målbeskrivelser';
+    }
+    return 'Back to Specialebeskrivelser';
+  };
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -32,7 +51,7 @@ const DocumentView = () => {
             description: "Document not found",
             variant: "destructive",
           });
-          navigate('/');
+          navigate(getBackPath());
         }
       } catch (error) {
         toast({
@@ -62,7 +81,7 @@ const DocumentView = () => {
         title: "Success",
         description: "Document deleted successfully",
       });
-      navigate('/');
+      navigate(getBackPath());
     } catch (error) {
       toast({
         title: "Error",
@@ -79,11 +98,11 @@ const DocumentView = () => {
         <div className="flex justify-between items-center">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(getBackPath())}
             className="flex items-center text-gray-600"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to Documents
+            {getBackLabel()}
           </Button>
           {document && (
             <Button 
@@ -113,10 +132,10 @@ const DocumentView = () => {
           <h2 className="text-xl font-medium text-gray-800">Document not found</h2>
           <p className="text-gray-500 mt-2">The document you're looking for doesn't exist or has been deleted.</p>
           <Button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(getBackPath())}
             className="mt-6"
           >
-            Return to Documents
+            {getBackLabel()}
           </Button>
         </div>
       )}
