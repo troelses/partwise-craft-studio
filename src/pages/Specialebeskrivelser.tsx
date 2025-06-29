@@ -2,18 +2,31 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import DocumentList from '@/components/DocumentList';
-import { Document } from '@/types/document';
+import SpecialtyList from '@/components/SpecialtyList';
+import { Document, Specialty } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const Specialebeskrivelser = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
+  const [activeSpecialty, setActiveSpecialty] = useState<Specialty>('All');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    let filtered = documents;
+
+    if (activeSpecialty !== 'All') {
+      filtered = filtered.filter(doc => doc.specialty === activeSpecialty);
+    }
+
+    setFilteredDocuments(filtered);
+  }, [documents, activeSpecialty]);
 
   const fetchDocuments = async () => {
     try {
@@ -66,7 +79,13 @@ const Specialebeskrivelser = () => {
           <p className="text-gray-500 mt-2">Manage your specialty descriptions</p>
         </div>
 
-        <DocumentList documents={documents} isLoading={isLoading} />
+        <SpecialtyList 
+          activeCategory="Specialebeskrivelser"
+          activeSpecialty={activeSpecialty}
+          onSpecialtyChange={setActiveSpecialty}
+        />
+
+        <DocumentList documents={filteredDocuments} isLoading={isLoading} />
       </div>
     </Layout>
   );

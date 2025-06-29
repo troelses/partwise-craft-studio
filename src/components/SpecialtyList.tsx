@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Specialty } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,22 +23,28 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSpecialties = async () => {
       try {
         setIsLoading(true);
+        
+        // Fetch from specialer table for the specialty names
         const { data, error } = await supabase
-          .from('training_documents')
-          .select('specialty')
-          .order('specialty');
+          .from('specialer')
+          .select('Specialenavn')
+          .order('Specialenavn');
         
         if (error) {
           throw error;
         }
 
-        // Extract unique specialties
-        const uniqueSpecialties = [...new Set(data.map(doc => doc.specialty))];
+        // Extract unique specialties, filtering out null values
+        const uniqueSpecialties = data
+          .map(item => item.Specialenavn)
+          .filter(specialty => specialty !== null) as string[];
+        
         setSpecialties(uniqueSpecialties);
       } catch (error) {
         console.error('Error fetching specialties:', error);
@@ -54,22 +61,81 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
     fetchSpecialties();
   }, [toast]);
 
-  const handleView = (specialty: Specialty, e: React.MouseEvent) => {
+  const handleView = async (specialty: Specialty, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`View ${specialty}`);
-    // Implement view logic here
+    
+    if (specialty === 'All') {
+      return;
+    }
+
+    try {
+      // Check if a document already exists for this specialty
+      const { data: existingDoc, error } = await supabase
+        .from('training_documents')
+        .select('id')
+        .eq('specialty', specialty)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking for existing document:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check for existing document",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (existingDoc) {
+        // Navigate to existing document
+        navigate(`/documents/${existingDoc.id}`);
+      } else {
+        // Create new document with template
+        const { data: newDoc, error: createError } = await supabase
+          .from('training_documents')
+          .insert({
+            title: `${specialty} - Specialebeskrivelse`,
+            specialty: specialty,
+            introduction: `Specialebeskrivelse for ${specialty}`
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating document:', createError);
+          toast({
+            title: "Error",
+            description: "Failed to create new document",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Navigate to the new document
+        navigate(`/documents/${newDoc.id}`);
+      }
+    } catch (error) {
+      console.error('Error handling view:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open document",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (specialty: Specialty, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Edit ${specialty}`);
-    // Implement edit logic here
+    handleView(specialty, e); // For now, edit is the same as view
   };
 
   const handleShare = (specialty: Specialty, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log(`Share ${specialty}`);
-    // Implement share logic here
+    toast({
+      title: "Info",
+      description: "Share functionality coming soon",
+    });
   };
 
   return (

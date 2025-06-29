@@ -186,6 +186,24 @@ export type Database = {
           },
         ]
       }
+      specialer: {
+        Row: {
+          created_at: string
+          id: number
+          Specialenavn: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          Specialenavn?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          Specialenavn?: string | null
+        }
+        Relationships: []
+      }
       training_documents: {
         Row: {
           created_at: string | null
