@@ -1,170 +1,165 @@
-import { Document, DocumentCategory, DocumentSection, Specialty } from '@/types/document';
 
-// Mock documents with required specialty property
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    title: 'Specialebeskrivelse: Kardiologi',
-    description: 'Beskrivelse af specialet kardiologi',
-    category: 'Specialebeskrivelser',
-    specialty: 'Intern medicinske specialer',
-    sections: [
-      {
-        id: '1-1',
-        title: 'Introduktion',
-        content: 'Dette er en introduktion til kardiologi...',
-        order: 1,
-        documentId: '1',
-        createdAt: '2023-05-01T10:30:00Z',
-        updatedAt: '2023-05-01T10:30:00Z',
-      },
-      {
-        id: '1-2',
-        title: 'Project Scope',
-        content: 'The project will include the following deliverables...',
-        order: 2,
-        documentId: '1',
-        createdAt: '2023-05-01T10:30:00Z',
-        updatedAt: '2023-05-01T10:30:00Z',
-      },
-      {
-        id: '1-3',
-        title: 'Timeline',
-        content: 'We anticipate completing this project within 3 months...',
-        order: 3,
-        documentId: '1',
-        createdAt: '2023-05-01T10:30:00Z',
-        updatedAt: '2023-05-01T10:30:00Z',
-      }
-    ],
-    createdAt: '2023-05-01T10:30:00Z',
-    updatedAt: '2023-05-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Målbeskrivelse: Karkirurgi',
-    description: 'Målbeskrivelse for karkirurgi',
-    category: 'Målbeskrivelser',
-    specialty: 'Kirurgiske specialer',
-    sections: [
-      {
-        id: '2-1',
-        title: 'Kompetencemål',
-        content: 'Efter endt uddannelse skal lægen kunne...',
-        order: 1,
-        documentId: '2',
-        createdAt: '2023-04-15T14:20:00Z',
-        updatedAt: '2023-04-15T14:20:00Z',
-      },
-      {
-        id: '2-2',
-        title: 'Attendees',
-        content: 'John Doe, Jane Smith, Robert Johnson',
-        order: 2,
-        documentId: '2',
-        createdAt: '2023-04-15T14:20:00Z',
-        updatedAt: '2023-04-15T14:20:00Z',
-      },
-      {
-        id: '2-3',
-        title: 'Agenda Items',
-        content: '1. Project updates\n2. Budget review\n3. Next steps',
-        order: 3,
-        documentId: '2',
-        createdAt: '2023-04-15T14:20:00Z',
-        updatedAt: '2023-04-15T14:20:00Z',
-      }
-    ],
-    createdAt: '2023-04-15T14:20:00Z',
-    updatedAt: '2023-04-15T14:20:00Z',
-  }
-];
+import { Document, DocumentSection } from '@/types/document';
+import { supabase } from '@/integrations/supabase/client';
 
 // Generate a simple ID
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 9);
 };
 
-// Mock API functions
 export const documentService = {
   // Get all documents
   getDocuments: async (): Promise<Document[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockDocuments);
-      }, 500);
-    });
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(doc => ({
+        id: doc.id,
+        title: doc.title,
+        description: '', // No description field in the documents table
+        category: 'Specialebeskrivelser',
+        specialty: 'Unknown', // This will be determined by the template
+        sections: [], // Sections will be loaded separately
+        createdAt: doc.created_at || '',
+        updatedAt: doc.updated_at || '',
+      }));
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      throw error;
+    }
   },
 
   // Get documents by category
   getDocumentsByCategory: async (category: string): Promise<Document[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filteredDocs = mockDocuments.filter(doc => doc.category === category);
-        resolve(filteredDocs);
-      }, 500);
-    });
+    return this.getDocuments(); // For now, return all documents
   },
 
   // Get a single document
   getDocument: async (id: string): Promise<Document | undefined> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const document = mockDocuments.find(doc => doc.id === id);
-        resolve(document);
-      }, 300);
-    });
+    try {
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (docError) throw docError;
+      if (!docData) return undefined;
+
+      // Fetch document sections
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('document_sections')
+        .select(`
+          *,
+          template_sections (
+            name,
+            position,
+            level
+          )
+        `)
+        .eq('document_id', id);
+
+      if (sectionsError) throw sectionsError;
+
+      const sections: DocumentSection[] = (sectionsData || []).map(section => ({
+        id: section.id,
+        title: section.template_sections?.name || 'Untitled Section',
+        content: section.content || '',
+        order: section.template_sections?.position || 0,
+        documentId: section.document_id || '',
+        createdAt: section.updated_at || '',
+        updatedAt: section.updated_at || '',
+      }));
+
+      return {
+        id: docData.id,
+        title: docData.title,
+        description: '',
+        category: 'Specialebeskrivelser',
+        specialty: 'Unknown',
+        sections,
+        createdAt: docData.created_at || '',
+        updatedAt: docData.updated_at || '',
+      };
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      throw error;
+    }
   },
 
   // Create a new document
   createDocument: async (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> => {
-    const newDocument: Document = {
-      ...document,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .insert({
+          title: document.title,
+          template_id: '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        mockDocuments.push(newDocument);
-        resolve(newDocument);
-      }, 500);
-    });
+      if (error) throw error;
+
+      return {
+        ...document,
+        id: data.id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+    } catch (error) {
+      console.error('Error creating document:', error);
+      throw error;
+    }
   },
 
   // Update a document
   updateDocument: async (document: Document): Promise<Document> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = mockDocuments.findIndex(doc => doc.id === document.id);
-        if (index !== -1) {
-          mockDocuments[index] = {
-            ...document,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        resolve(mockDocuments[index]);
-      }, 500);
-    });
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          title: document.title,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', document.id);
+
+      if (error) throw error;
+
+      return {
+        ...document,
+        updatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error updating document:', error);
+      throw error;
+    }
   },
 
   // Delete a document
   deleteDocument: async (id: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = mockDocuments.findIndex(doc => doc.id === id);
-        if (index !== -1) {
-          mockDocuments.splice(index, 1);
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 500);
-    });
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw error;
+    }
   },
 
-  // Add a section to a document
+  // Add a section to a document (not used for template documents)
   addSection: async (documentId: string, section: Omit<DocumentSection, 'id' | 'documentId' | 'createdAt' | 'updatedAt'>): Promise<DocumentSection> => {
     const newSection: DocumentSection = {
       ...section,
@@ -174,48 +169,36 @@ export const documentService = {
       updatedAt: new Date().toISOString(),
     };
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const docIndex = mockDocuments.findIndex(doc => doc.id === documentId);
-        if (docIndex !== -1) {
-          mockDocuments[docIndex].sections.push(newSection);
-        }
-        resolve(newSection);
-      }, 300);
-    });
+    // This is a mock implementation for non-template documents
+    return newSection;
   },
 
   // Update a section
   updateSection: async (section: DocumentSection): Promise<DocumentSection> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const docIndex = mockDocuments.findIndex(doc => doc.id === section.documentId);
-        if (docIndex !== -1) {
-          const sectionIndex = mockDocuments[docIndex].sections.findIndex(s => s.id === section.id);
-          if (sectionIndex !== -1) {
-            mockDocuments[docIndex].sections[sectionIndex] = {
-              ...section,
-              updatedAt: new Date().toISOString()
-            };
-          }
-        }
-        resolve(section);
-      }, 300);
-    });
+    try {
+      const { error } = await supabase
+        .from('document_sections')
+        .update({
+          content: section.content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', section.id);
+
+      if (error) throw error;
+
+      return {
+        ...section,
+        updatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error updating section:', error);
+      throw error;
+    }
   },
 
-  // Delete a section
+  // Delete a section (not used for template documents)
   deleteSection: async (documentId: string, sectionId: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const docIndex = mockDocuments.findIndex(doc => doc.id === documentId);
-        if (docIndex !== -1) {
-          mockDocuments[docIndex].sections = mockDocuments[docIndex].sections.filter(s => s.id !== sectionId);
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 300);
-    });
+    // This is a mock implementation for non-template documents
+    return true;
   }
 };

@@ -12,8 +12,7 @@ import { Document, DocumentSection } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { documentService } from '@/services/documentService';
-import { templateService } from '@/services/templateService';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentEditorProps {
@@ -21,33 +20,116 @@ interface DocumentEditorProps {
   onUpdate: (updatedDoc: Document) => void;
 }
 
+interface TemplateSection {
+  id: string;
+  name: string;
+  position: number;
+  level: number;
+}
+
+interface DocumentSectionWithTemplate extends DocumentSection {
+  templateSection?: TemplateSection;
+}
+
 const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) => {
   const [currentDocument, setCurrentDocument] = useState<Document>(document);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isEditingHeader, setIsEditingHeader] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [templatedSections, setTemplatedSections] = useState<DocumentSection[]>([]);
+  const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
+  const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Initialize template sections if this is a template-based document
   useEffect(() => {
-    if (templateService.hasTemplate(document.category) && document.sections.length === 0) {
-      const templateSections = templateService.getTemplateSections(document.category);
-      const sectionsWithIds = templateSections.map((section, index) => ({
-        ...section,
-        id: `temp-${index}`,
-        documentId: document.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
+    fetchTemplateAndDocumentSections();
+  }, [document.id]);
+
+  const fetchTemplateAndDocumentSections = async () => {
+    try {
+      setIsLoading(true);
       
-      setTemplatedSections(sectionsWithIds);
+      // Fetch template sections
+      const { data: templateData, error: templateError } = await supabase
+        .from('template_sections')
+        .select('*')
+        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .order('position');
+
+      if (templateError) {
+        throw templateError;
+      }
+
+      const templateSections = templateData || [];
+      setTemplateSections(templateSections);
+
+      // Fetch existing document sections
+      const { data: documentSectionsData, error: docSectionsError } = await supabase
+        .from('document_sections')
+        .select('*')
+        .eq('document_id', document.id);
+
+      if (docSectionsError) {
+        throw docSectionsError;
+      }
+
+      // Create a map of existing document sections by template_section_id
+      const existingSectionsMap = new Map();
+      (documentSectionsData || []).forEach(section => {
+        if (section.template_section_id) {
+          existingSectionsMap.set(section.template_section_id, section);
+        }
+      });
+
+      // Combine template sections with document sections
+      const combinedSections: DocumentSectionWithTemplate[] = templateSections.map(templateSection => {
+        const existingSection = existingSectionsMap.get(templateSection.id);
+        
+        if (existingSection) {
+          return {
+            id: existingSection.id,
+            title: templateSection.name,
+            content: existingSection.content || '',
+            order: templateSection.position,
+            documentId: document.id,
+            createdAt: existingSection.updated_at || new Date().toISOString(),
+            updatedAt: existingSection.updated_at || new Date().toISOString(),
+            templateSection
+          };
+        } else {
+          // Create placeholder for missing sections
+          return {
+            id: `temp-${templateSection.id}`,
+            title: templateSection.name,
+            content: '',
+            order: templateSection.position,
+            documentId: document.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            templateSection
+          };
+        }
+      });
+
+      setDocumentSections(combinedSections);
+      
+      // Update current document with the sections
       setCurrentDocument({
         ...currentDocument,
-        sections: sectionsWithIds
+        sections: combinedSections
       });
+
+    } catch (error) {
+      console.error('Error fetching template and document sections:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load document template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [document.category, document.sections.length]);
+  };
 
   // Handle title and description update
   const handleHeaderChange = (field: 'title' | 'description', value: string) => {
@@ -61,14 +143,24 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
   const saveHeaderChanges = async () => {
     setIsSaving(true);
     try {
-      const updatedDocument = await documentService.updateDocument(currentDocument);
-      onUpdate(updatedDocument);
-      setIsEditingHeader(false);
+      const { error } = await supabase
+        .from('documents')
+        .update({ 
+          title: currentDocument.title,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', document.id);
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Document updated successfully",
       });
+      setIsEditingHeader(false);
+      onUpdate(currentDocument);
     } catch (error) {
+      console.error('Error updating document:', error);
       toast({
         title: "Error",
         description: "Failed to update document",
@@ -81,10 +173,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
 
   // Handle section content changes
   const handleSectionChange = (sectionId: string, field: 'title' | 'content', value: string) => {
-    const updatedSections = currentDocument.sections.map(section => 
+    const updatedSections = documentSections.map(section => 
       section.id === sectionId ? { ...section, [field]: value } : section
     );
     
+    setDocumentSections(updatedSections);
     setCurrentDocument({
       ...currentDocument,
       sections: updatedSections
@@ -94,18 +187,52 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
   // Save section changes
   const saveSection = async (sectionId: string) => {
     setIsSaving(true);
-    const section = currentDocument.sections.find(s => s.id === sectionId);
+    const section = documentSections.find(s => s.id === sectionId);
     
-    if (!section) return;
+    if (!section || !section.templateSection) return;
     
     try {
-      await documentService.updateSection(section);
+      // Check if this is a new section (temp ID) or existing one
+      if (section.id.startsWith('temp-')) {
+        // Create new document section
+        const { data, error } = await supabase
+          .from('document_sections')
+          .insert({
+            document_id: document.id,
+            template_section_id: section.templateSection.id,
+            content: section.content,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update the section with the real ID
+        const updatedSections = documentSections.map(s => 
+          s.id === sectionId ? { ...s, id: data.id } : s
+        );
+        setDocumentSections(updatedSections);
+      } else {
+        // Update existing section
+        const { error } = await supabase
+          .from('document_sections')
+          .update({ 
+            content: section.content,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', section.id);
+
+        if (error) throw error;
+      }
+
       setEditingSection(null);
       toast({
         title: "Success",
         description: "Section updated successfully",
       });
     } catch (error) {
+      console.error('Error updating section:', error);
       toast({
         title: "Error",
         description: "Failed to update section",
@@ -116,135 +243,18 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     }
   };
 
-  // Add a new section (only for non-template documents)
-  const addSection = async () => {
-    if (templateService.hasTemplate(document.category)) {
-      toast({
-        title: "Info",
-        description: "This document uses a fixed template. All sections are already provided.",
-        variant: "default",
-      });
-      return;
-    }
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto animate-pulse space-y-4">
+        <div className="h-12 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-36 bg-gray-200 rounded w-full mt-6"></div>
+        <div className="h-36 bg-gray-200 rounded w-full"></div>
+      </div>
+    );
+  }
 
-    const newSectionOrder = currentDocument.sections.length > 0 
-      ? Math.max(...currentDocument.sections.map(s => s.order)) + 1 
-      : 1;
-    
-    try {
-      const newSection = await documentService.addSection(currentDocument.id, {
-        title: "New Section",
-        content: "",
-        order: newSectionOrder
-      });
-      
-      setCurrentDocument({
-        ...currentDocument,
-        sections: [...currentDocument.sections, newSection]
-      });
-      
-      // Immediately set this section to edit mode
-      setEditingSection(newSection.id);
-      
-      toast({
-        title: "Success",
-        description: "New section added",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add section",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Delete a section (only for non-template documents)
-  const deleteSection = async (sectionId: string) => {
-    if (templateService.hasTemplate(document.category)) {
-      toast({
-        title: "Info",
-        description: "Cannot delete sections from template documents.",
-        variant: "default",
-      });
-      return;
-    }
-
-    if (!window.confirm("Are you sure you want to delete this section?")) return;
-    
-    try {
-      await documentService.deleteSection(currentDocument.id, sectionId);
-      setCurrentDocument({
-        ...currentDocument,
-        sections: currentDocument.sections.filter(s => s.id !== sectionId)
-      });
-      toast({
-        title: "Success",
-        description: "Section deleted",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete section",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Move section up or down (disabled for template documents)
-  const moveSection = async (sectionId: string, direction: 'up' | 'down') => {
-    if (templateService.hasTemplate(document.category)) {
-      toast({
-        title: "Info",
-        description: "Cannot reorder sections in template documents.",
-        variant: "default",
-      });
-      return;
-    }
-
-    const sectionIndex = currentDocument.sections.findIndex(s => s.id === sectionId);
-    if (
-      (direction === 'up' && sectionIndex === 0) || 
-      (direction === 'down' && sectionIndex === currentDocument.sections.length - 1)
-    ) {
-      return;
-    }
-    
-    const newSections = [...currentDocument.sections];
-    const targetIndex = direction === 'up' ? sectionIndex - 1 : sectionIndex + 1;
-    
-    // Swap the sections
-    [newSections[sectionIndex], newSections[targetIndex]] = 
-      [newSections[targetIndex], newSections[sectionIndex]];
-    
-    // Update the order property
-    newSections.forEach((section, index) => {
-      section.order = index + 1;
-    });
-    
-    setCurrentDocument({
-      ...currentDocument,
-      sections: newSections
-    });
-    
-    // Update the orders in the database
-    try {
-      await Promise.all([
-        documentService.updateSection(newSections[sectionIndex]),
-        documentService.updateSection(newSections[targetIndex])
-      ]);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reorder sections",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Sort sections by order
-  const sortedSections = [...currentDocument.sections].sort((a, b) => a.order - b.order);
-  const isTemplateDocument = templateService.hasTemplate(document.category);
+  const sortedSections = [...documentSections].sort((a, b) => a.order - b.order);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -259,16 +269,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                 value={currentDocument.title}
                 onChange={(e) => handleHeaderChange('title', e.target.value)}
                 className="w-full"
-              />
-            </div>
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
-              <Textarea
-                id="description"
-                value={currentDocument.description}
-                onChange={(e) => handleHeaderChange('description', e.target.value)}
-                className="w-full"
-                rows={3}
               />
             </div>
             <div className="flex space-x-2 justify-end">
@@ -298,14 +298,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                 <Edit className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-gray-500 mt-2">{currentDocument.description}</p>
-            {isTemplateDocument && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                <p className="text-sm text-blue-700">
-                  This document follows the fixed template for {document.category}. All required sections are provided below.
-                </p>
-              </div>
-            )}
+            <div className="mt-3 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-700">
+                This document follows the Specialebeskrivelser template. All required sections are provided below.
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -313,27 +310,18 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
       {/* Document sections */}
       <div className="space-y-4">
         {sortedSections.map((section) => (
-          <div key={section.id} className="document-section bg-white">
+          <div key={section.id} className="document-section bg-white p-6 rounded-lg shadow-sm">
             {editingSection === section.id ? (
               <div className="space-y-3">
                 <div>
-                  <label htmlFor={`section-title-${section.id}`} className="block text-sm font-medium mb-1">Section Title</label>
-                  <Input
-                    id={`section-title-${section.id}`}
-                    value={section.title}
-                    onChange={(e) => handleSectionChange(section.id, 'title', e.target.value)}
-                    className="w-full"
-                    disabled={isTemplateDocument}
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">Content</label>
+                  <label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">Content for: {section.title}</label>
                   <Textarea
                     id={`section-content-${section.id}`}
                     value={section.content}
                     onChange={(e) => handleSectionChange(section.id, 'content', e.target.value)}
                     className="w-full min-h-[150px]"
                     rows={6}
+                    placeholder={`Enter content for ${section.title}...`}
                   />
                 </div>
                 <div className="flex space-x-2 justify-end">
@@ -353,68 +341,24 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
               </div>
             ) : (
               <div>
-                <div className="document-section-header">
-                  <h3 className="text-lg font-medium">{section.title}</h3>
-                  <div className="flex space-x-1">
-                    {!isTemplateDocument && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => moveSection(section.id, 'up')} 
-                          disabled={section.order === 1}
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => moveSection(section.id, 'down')}
-                          disabled={section.order === sortedSections.length}
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => setEditingSection(section.id)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {!isTemplateDocument && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => deleteSection(section.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-medium mb-2">{section.title}</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setEditingSection(section.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="mt-2 whitespace-pre-wrap">
-                  {section.content || <span className="text-gray-400 italic">No content</span>}
+                  {section.content || <span className="text-gray-400 italic">No content - click edit to add content</span>}
                 </div>
               </div>
             )}
           </div>
         ))}
       </div>
-
-      {/* Add section button - only for non-template documents */}
-      {!isTemplateDocument && (
-        <Button 
-          onClick={addSection} 
-          variant="outline"
-          className="mt-6"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Section
-        </Button>
-      )}
     </div>
   );
 };
