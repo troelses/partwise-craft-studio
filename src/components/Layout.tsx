@@ -41,10 +41,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const navItems = [
-    { path: '/', label: 'Documents', icon: FileText },
     { path: '/specialebeskrivelser', label: 'Specialebeskrivelser', icon: BookOpen },
     { path: '/maalbeskrivelser', label: 'Målbeskrivelser', icon: Target },
-    { path: '/documents/new', label: 'New Document', icon: Plus },
     { path: '/settings', label: 'Settings', icon: Settings },
     ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: Shield }] : []),
   ];

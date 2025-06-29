@@ -51,30 +51,46 @@ export const documentService = {
       if (docError) throw docError;
       if (!docData) return undefined;
 
-      // Fetch document sections
-      const { data: sectionsData, error: sectionsError } = await supabase
+      // First, get the template sections to define the structure
+      const { data: templateSections, error: templateError } = await supabase
+        .from('template_sections')
+        .select('*')
+        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .order('position');
+
+      if (templateError) throw templateError;
+
+      // Then get any existing document sections
+      const { data: existingSections, error: sectionsError } = await supabase
         .from('document_sections')
-        .select(`
-          *,
-          template_sections (
-            name,
-            position,
-            level
-          )
-        `)
+        .select('*')
         .eq('document_id', id);
 
       if (sectionsError) throw sectionsError;
 
-      const sections: DocumentSection[] = (sectionsData || []).map(section => ({
-        id: section.id,
-        title: section.template_sections?.name || 'Untitled Section',
-        content: section.content || '',
-        order: section.template_sections?.position || 0,
-        documentId: section.document_id || '',
-        createdAt: section.updated_at || '',
-        updatedAt: section.updated_at || '',
-      }));
+      // Create a map of existing sections by template_section_id
+      const existingSectionsMap = new Map();
+      existingSections?.forEach(section => {
+        if (section.template_section_id) {
+          existingSectionsMap.set(section.template_section_id, section);
+        }
+      });
+
+      // Build sections array based on template structure
+      const sections: DocumentSection[] = (templateSections || []).map(templateSection => {
+        const existingSection = existingSectionsMap.get(templateSection.id);
+        
+        return {
+          id: existingSection?.id || generateId(),
+          title: templateSection.name,
+          content: existingSection?.content || '',
+          order: templateSection.position,
+          documentId: id,
+          createdAt: existingSection?.updated_at || new Date().toISOString(),
+          updatedAt: existingSection?.updated_at || new Date().toISOString(),
+          templateSectionId: templateSection.id,
+        };
+      });
 
       return {
         id: docData.id,
@@ -107,6 +123,7 @@ export const documentService = {
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('Failed to create document');
 
       return {
         ...document,
@@ -176,15 +193,38 @@ export const documentService = {
   // Update a section
   updateSection: async (section: DocumentSection): Promise<DocumentSection> => {
     try {
-      const { error } = await supabase
+      // Check if this document section already exists in the database
+      const { data: existingSection } = await supabase
         .from('document_sections')
-        .update({
-          content: section.content,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', section.id);
+        .select('id')
+        .eq('document_id', section.documentId)
+        .eq('template_section_id', section.templateSectionId)
+        .single();
 
-      if (error) throw error;
+      if (existingSection) {
+        // Update existing section
+        const { error } = await supabase
+          .from('document_sections')
+          .update({
+            content: section.content,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingSection.id);
+
+        if (error) throw error;
+      } else {
+        // Create new section
+        const { error } = await supabase
+          .from('document_sections')
+          .insert({
+            document_id: section.documentId,
+            template_section_id: section.templateSectionId,
+            content: section.content,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+      }
 
       return {
         ...section,
