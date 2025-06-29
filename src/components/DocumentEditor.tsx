@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PlusCircle, 
   Save, 
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { documentService } from '@/services/documentService';
+import { templateService } from '@/services/templateService';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentEditorProps {
@@ -25,7 +26,28 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isEditingHeader, setIsEditingHeader] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [templatedSections, setTemplatedSections] = useState<DocumentSection[]>([]);
   const { toast } = useToast();
+
+  // Initialize template sections if this is a template-based document
+  useEffect(() => {
+    if (templateService.hasTemplate(document.category) && document.sections.length === 0) {
+      const templateSections = templateService.getTemplateSections(document.category);
+      const sectionsWithIds = templateSections.map((section, index) => ({
+        ...section,
+        id: `temp-${index}`,
+        documentId: document.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      
+      setTemplatedSections(sectionsWithIds);
+      setCurrentDocument({
+        ...currentDocument,
+        sections: sectionsWithIds
+      });
+    }
+  }, [document.category, document.sections.length]);
 
   // Handle title and description update
   const handleHeaderChange = (field: 'title' | 'description', value: string) => {
@@ -94,8 +116,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     }
   };
 
-  // Add a new section
+  // Add a new section (only for non-template documents)
   const addSection = async () => {
+    if (templateService.hasTemplate(document.category)) {
+      toast({
+        title: "Info",
+        description: "This document uses a fixed template. All sections are already provided.",
+        variant: "default",
+      });
+      return;
+    }
+
     const newSectionOrder = currentDocument.sections.length > 0 
       ? Math.max(...currentDocument.sections.map(s => s.order)) + 1 
       : 1;
@@ -128,8 +159,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     }
   };
 
-  // Delete a section
+  // Delete a section (only for non-template documents)
   const deleteSection = async (sectionId: string) => {
+    if (templateService.hasTemplate(document.category)) {
+      toast({
+        title: "Info",
+        description: "Cannot delete sections from template documents.",
+        variant: "default",
+      });
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this section?")) return;
     
     try {
@@ -151,8 +191,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     }
   };
 
-  // Move section up or down
+  // Move section up or down (disabled for template documents)
   const moveSection = async (sectionId: string, direction: 'up' | 'down') => {
+    if (templateService.hasTemplate(document.category)) {
+      toast({
+        title: "Info",
+        description: "Cannot reorder sections in template documents.",
+        variant: "default",
+      });
+      return;
+    }
+
     const sectionIndex = currentDocument.sections.findIndex(s => s.id === sectionId);
     if (
       (direction === 'up' && sectionIndex === 0) || 
@@ -195,6 +244,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
 
   // Sort sections by order
   const sortedSections = [...currentDocument.sections].sort((a, b) => a.order - b.order);
+  const isTemplateDocument = templateService.hasTemplate(document.category);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -249,6 +299,13 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
               </Button>
             </div>
             <p className="text-gray-500 mt-2">{currentDocument.description}</p>
+            {isTemplateDocument && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                <p className="text-sm text-blue-700">
+                  This document follows the fixed template for {document.category}. All required sections are provided below.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -266,6 +323,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                     value={section.title}
                     onChange={(e) => handleSectionChange(section.id, 'title', e.target.value)}
                     className="w-full"
+                    disabled={isTemplateDocument}
                   />
                 </div>
                 <div>
@@ -298,22 +356,26 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                 <div className="document-section-header">
                   <h3 className="text-lg font-medium">{section.title}</h3>
                   <div className="flex space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => moveSection(section.id, 'up')} 
-                      disabled={section.order === 1}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => moveSection(section.id, 'down')}
-                      disabled={section.order === sortedSections.length}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                    {!isTemplateDocument && (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => moveSection(section.id, 'up')} 
+                          disabled={section.order === 1}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => moveSection(section.id, 'down')}
+                          disabled={section.order === sortedSections.length}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="icon"
@@ -321,14 +383,16 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => deleteSection(section.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!isTemplateDocument && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => deleteSection(section.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-2 whitespace-pre-wrap">
@@ -340,15 +404,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
         ))}
       </div>
 
-      {/* Add section button */}
-      <Button 
-        onClick={addSection} 
-        variant="outline"
-        className="mt-6"
-      >
-        <PlusCircle className="h-4 w-4 mr-2" />
-        Add Section
-      </Button>
+      {/* Add section button - only for non-template documents */}
+      {!isTemplateDocument && (
+        <Button 
+          onClick={addSection} 
+          variant="outline"
+          className="mt-6"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Section
+        </Button>
+      )}
     </div>
   );
 };
