@@ -1,154 +1,105 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  FileText, 
-  PlusCircle, 
-  Settings, 
-  Menu,
-  ChevronLeft,
-  LogOut
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FileText, Plus, Settings, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const adminStatus = await authService.isAdmin();
+    setIsAdmin(adminStatus);
   };
 
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to sign out",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Successfully signed out",
-        });
-        // Force page reload for clean state
-        window.location.href = '/auth';
-      }
+      if (error) throw error;
+      navigate('/auth');
     } catch (error) {
-      console.error('Sign out error:', error);
       toast({
         title: "Error",
-        description: "An error occurred while signing out",
-        variant: "destructive"
+        description: "Failed to sign out",
+        variant: "destructive",
       });
     }
   };
 
   const navItems = [
-    { 
-      icon: <FileText className="h-5 w-5" />, 
-      name: 'Documents', 
-      path: '/' 
-    },
-    { 
-      icon: <Settings className="h-5 w-5" />, 
-      name: 'Settings', 
-      path: '/settings' 
-    },
+    { path: '/', label: 'Documents', icon: FileText },
+    { path: '/documents/new', label: 'New Document', icon: Plus },
+    { path: '/settings', label: 'Settings', icon: Settings },
+    ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside 
-        className={cn(
-          "bg-document-blue text-white transition-all duration-300 flex flex-col",
-          sidebarCollapsed ? "w-16" : "w-64"
-        )}
-      >
-        {/* Logo */}
-        <div className="p-4 flex items-center justify-between border-b border-white/10">
-          {!sidebarCollapsed && (
-            <h1 className="text-xl font-bold">DocStruct</h1>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar} 
-            className="hover:bg-white/10"
-          >
-            {sidebarCollapsed ? (
-              <Menu className="h-5 w-5" />
-            ) : (
-              <ChevronLeft className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="p-6 border-b">
+            <h1 className="text-xl font-bold text-gray-900">Document Manager</h1>
+          </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 pt-4">
-          <ul>
-            {navItems.map((item) => (
-              <li key={item.name}>
-                <Link 
-                  to={item.path} 
-                  className={cn(
-                    "flex items-center px-4 py-3 hover:bg-white/10 transition-colors",
-                    location.pathname === item.path && "bg-white/20",
-                    sidebarCollapsed ? "justify-center" : "space-x-3"
-                  )}
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  {item.icon}
-                  {!sidebarCollapsed && <span>{item.name}</span>}
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+              );
+            })}
+          </nav>
 
-        {/* Create new document button */}
-        <div className="p-4 border-t border-white/10">
-          <Link to="/documents/new">
-            <Button 
-              className={cn(
-                "bg-white text-document-blue hover:bg-gray-100 w-full mb-2",
-                sidebarCollapsed && "p-2"
-              )}
-            >
-              <PlusCircle className="h-5 w-5" />
-              {!sidebarCollapsed && <span className="ml-2">New Document</span>}
-            </Button>
-          </Link>
-          
           {/* Sign out button */}
-          <Button 
-            onClick={handleSignOut}
-            variant="ghost"
-            className={cn(
-              "w-full text-white hover:bg-white/10",
-              sidebarCollapsed && "p-2"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {!sidebarCollapsed && <span className="ml-2">Sign Out</span>}
-          </Button>
+          <div className="p-4 border-t">
+            <Button
+              onClick={handleSignOut}
+              variant="ghost"
+              className="w-full flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-100"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sign Out</span>
+            </Button>
+          </div>
         </div>
-      </aside>
+      </div>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto p-6">
-        {children}
-      </main>
+      <div className="ml-64">
+        <main className="p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

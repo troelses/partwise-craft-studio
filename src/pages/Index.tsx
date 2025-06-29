@@ -109,6 +109,7 @@ const Index = () => {
         {/* Specialty Filter - Only show for Målbeskrivelser */}
         {activeCategory === 'Målbeskrivelser' && (
           <SpecialtyList 
+            activeCategory={activeCategory}
             activeSpecialty={activeSpecialty}
             onSpecialtyChange={setActiveSpecialty}
           />
