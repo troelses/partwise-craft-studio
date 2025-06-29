@@ -117,5 +117,34 @@ export const authService = {
     }
 
     return true;
+  },
+
+  async checkPermissions(documentId: string, sectionId?: string): Promise<{ canView: boolean; canEdit: boolean }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { canView: false, canEdit: false };
+
+    // Check if user is admin - admins have all permissions
+    const profile = await this.getCurrentUserProfile();
+    if (profile?.role === 'admin') {
+      return { canView: true, canEdit: true };
+    }
+
+    // Get user permissions for this document/section
+    const permissions = await this.getUserPermissions(user.id, documentId);
+    
+    // Find the most specific permission (section-specific over document-wide)
+    let relevantPermission = permissions.find(p => p.section_id === sectionId);
+    if (!relevantPermission) {
+      relevantPermission = permissions.find(p => p.section_id === null);
+    }
+
+    if (!relevantPermission) {
+      return { canView: false, canEdit: false };
+    }
+
+    return {
+      canView: relevantPermission.can_view,
+      canEdit: relevantPermission.can_edit
+    };
   }
 };

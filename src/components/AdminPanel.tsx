@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { authService } from '@/services/authService';
-import { UserProfile, UserRole } from '@/types/auth';
+import { UserProfile } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,7 +31,7 @@ const AdminPanel = () => {
 
   const fetchUsers = async () => {
     try {
-      const usersList = await authService.getAllUsers();
+      const usersList = await authService.getAllUserProfiles();
       setUsers(usersList);
     } catch (error) {
       toast({
@@ -44,12 +44,12 @@ const AdminPanel = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+  const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const success = await authService.updateUserRole(userId, newRole);
       if (success) {
         setUsers(users.map(user => 
-          user.userId === userId ? { ...user, role: newRole } : user
+          user.user_id === userId ? { ...user, role: newRole } : user
         ));
         toast({
           title: "Success",
@@ -106,13 +106,13 @@ const AdminPanel = () => {
                 <div>
                   <p className="font-medium">{user.email}</p>
                   <p className="text-sm text-gray-500">
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                    Joined {new Date(user.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Select
                     value={user.role}
-                    onValueChange={(value: UserRole) => handleRoleChange(user.userId, value)}
+                    onValueChange={(value: string) => handleRoleChange(user.user_id, value)}
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />
