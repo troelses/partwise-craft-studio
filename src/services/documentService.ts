@@ -1,3 +1,4 @@
+
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -121,7 +122,7 @@ export const documentService = {
           content: existingSection?.content || '',
           order: templateSection.position || 0,
           documentId: id,
-          createdAt: existingSection?.updated_at || new Date().toISOString(),
+          createdAt: existingSection?.created_at || new Date().toISOString(),
           updatedAt: existingSection?.updated_at || new Date().toISOString(),
           templateSectionId: templateSection.id,
         };
