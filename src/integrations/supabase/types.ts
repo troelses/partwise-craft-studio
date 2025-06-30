@@ -283,6 +283,7 @@ export type Database = {
       }
       template_sections: {
         Row: {
+          description: string | null
           id: string
           level: number
           name: string
@@ -290,6 +291,7 @@ export type Database = {
           template_id: string | null
         }
         Insert: {
+          description?: string | null
           id?: string
           level?: number
           name: string
@@ -297,6 +299,7 @@ export type Database = {
           template_id?: string | null
         }
         Update: {
+          description?: string | null
           id?: string
           level?: number
           name?: string

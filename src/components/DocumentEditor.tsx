@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   PlusCircle, 
@@ -24,6 +25,7 @@ interface TemplateSection {
   name: string;
   position: number;
   level: number;
+  description?: string;
 }
 
 interface DocumentSectionWithTemplate extends DocumentSection {
@@ -48,7 +50,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     try {
       setIsLoading(true);
       
-      // Fetch template sections
+      // Fetch template sections with description
       const { data: templateData, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
@@ -316,6 +318,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                   <label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">
                     Content for: {section.title}
                   </label>
+                  {section.templateSection?.description && (
+                    <p className="text-sm text-gray-600 mb-3 italic">
+                      {section.templateSection.description}
+                    </p>
+                  )}
                   <RichTextEditor
                     content={section.content}
                     onChange={(content) => handleSectionChange(section.id, 'content', content)}
@@ -340,7 +347,14 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
             ) : (
               <div>
                 <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-medium mb-2">{section.title}</h3>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium mb-2">{section.title}</h3>
+                    {section.templateSection?.description && (
+                      <p className="text-sm text-gray-600 mb-3 italic">
+                        {section.templateSection.description}
+                      </p>
+                    )}
+                  </div>
                   <Button 
                     variant="ghost" 
                     size="icon"
