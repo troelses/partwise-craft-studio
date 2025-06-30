@@ -2,7 +2,7 @@
 import { Document as DocxDocument, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Document } from '@/types/document';
+import { Document as AppDocument } from '@/types/document';
 
 // Helper function to convert JSON content to plain text
 const jsonToPlainText = (jsonContent: string): string => {
@@ -40,7 +40,7 @@ const extractTextFromNodes = (nodes: any[]): string => {
   return text;
 };
 
-export const exportToWord = async (document: Document) => {
+export const exportToWord = async (document: AppDocument) => {
   try {
     const sortedSections = [...document.sections].sort((a, b) => a.order - b.order);
     
@@ -116,7 +116,7 @@ export const exportToWord = async (document: Document) => {
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = globalThis.document.createElement('a');
     link.href = url;
     link.download = `${document.title}.docx`;
     link.click();
@@ -128,7 +128,7 @@ export const exportToWord = async (document: Document) => {
   }
 };
 
-export const exportToPDF = async (document: Document) => {
+export const exportToPDF = async (document: AppDocument) => {
   try {
     const sortedSections = [...document.sections].sort((a, b) => a.order - b.order);
     
