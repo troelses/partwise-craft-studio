@@ -1,4 +1,3 @@
-
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
