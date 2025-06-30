@@ -5,13 +5,22 @@ import { UserProfile } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, Settings } from 'lucide-react';
+import { Shield, Users, Settings, UserPlus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('viewer');
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,6 +76,51 @@ const AdminPanel = () => {
     }
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingUser(true);
+
+    try {
+      // Create the user account
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: newUserEmail,
+        password: newUserPassword,
+        email_confirm: true
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Update the user role if it's not the default 'viewer'
+        if (newUserRole !== 'viewer') {
+          await authService.updateUserRole(data.user.id, newUserRole);
+        }
+
+        toast({
+          title: "Success",
+          description: `User account created successfully for ${newUserEmail}`,
+        });
+
+        // Reset form and close dialog
+        setNewUserEmail('');
+        setNewUserPassword('');
+        setNewUserRole('viewer');
+        setCreateUserDialogOpen(false);
+
+        // Refresh the users list
+        fetchUsers();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -87,9 +141,80 @@ const AdminPanel = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Admin Panel</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Settings className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Admin Panel</h1>
+        </div>
+        <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center space-x-2">
+              <UserPlus className="h-4 w-4" />
+              <span>Create User</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New User Account</DialogTitle>
+              <DialogDescription>
+                Create a new user account and assign a role.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateUser}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="Enter user email"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={newUserRole} onValueChange={setNewUserRole}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="editor">Editor</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateUserDialogOpen(false)}
+                  disabled={isCreatingUser}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isCreatingUser}>
+                  {isCreatingUser ? 'Creating...' : 'Create User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>

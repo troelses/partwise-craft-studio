@@ -11,7 +11,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,48 +53,22 @@ const Auth = () => {
     setError('');
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            setError('Invalid email or password. Please check your credentials.');
-          } else {
-            setError(error.message);
-          }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials.');
         } else {
-          toast({
-            title: "Success",
-            description: "Successfully logged in!",
-          });
+          setError(error.message);
         }
       } else {
-        const redirectUrl = `${window.location.origin}/`;
-        
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectUrl
-          }
+        toast({
+          title: "Success",
+          description: "Successfully logged in!",
         });
-        
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            setError('An account with this email already exists. Please try logging in instead.');
-          } else {
-            setError(error.message);
-          }
-        } else {
-          toast({
-            title: "Success",
-            description: "Account created! Please check your email to verify your account.",
-          });
-          setIsLogin(true);
-        }
       }
     } catch (error: any) {
       setError(error.message || 'An unexpected error occurred');
@@ -110,12 +83,10 @@ const Auth = () => {
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-document-blue">
-              {isLogin ? 'Sign in to your account' : 'Create your account'}
+              Sign in to your account
             </CardTitle>
             <CardDescription>
-              {isLogin 
-                ? 'Welcome back! Please enter your details.' 
-                : 'Get started by creating a new account.'}
+              Please enter your credentials to access the system.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -156,23 +127,12 @@ const Auth = () => {
                 className="w-full bg-document-blue hover:bg-blue-800"
                 disabled={loading}
               >
-                {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                {loading ? 'Please wait...' : 'Sign In'}
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                }}
-                className="text-sm text-document-blue hover:underline"
-              >
-                {isLogin 
-                  ? "Don't have an account? Sign up" 
-                  : "Already have an account? Sign in"}
-              </button>
+            <div className="mt-4 text-center text-sm text-gray-600">
+              Don't have an account? Contact your administrator.
             </div>
           </CardContent>
         </Card>

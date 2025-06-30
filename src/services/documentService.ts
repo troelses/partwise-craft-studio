@@ -82,9 +82,9 @@ export const documentService = {
         
         return {
           id: existingSection?.id || generateId(),
-          title: templateSection.name,
+          title: templateSection.name || '',
           content: existingSection?.content || '',
-          order: templateSection.position,
+          order: templateSection.position || 0,
           documentId: id,
           createdAt: existingSection?.updated_at || new Date().toISOString(),
           updatedAt: existingSection?.updated_at || new Date().toISOString(),
