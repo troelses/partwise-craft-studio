@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -8,7 +7,14 @@ import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Trash2, Edit, Eye } from 'lucide-react';
+import { ChevronLeft, Trash2, Edit, Eye, Download } from 'lucide-react';
+import { exportToWord, exportToPDF } from '@/utils/documentExporter';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const DocumentView = () => {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +99,32 @@ const DocumentView = () => {
     }
   };
 
+  const handleExport = async (format: 'word' | 'pdf') => {
+    if (!document) return;
+    
+    try {
+      if (format === 'word') {
+        await exportToWord(document);
+        toast({
+          title: "Success",
+          description: "Document exported as Word document",
+        });
+      } else {
+        await exportToPDF(document);
+        toast({
+          title: "Success",
+          description: "Document exported as PDF",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to export document as ${format.toUpperCase()}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="mb-6">
@@ -108,6 +140,26 @@ const DocumentView = () => {
           
           {document && (
             <div className="flex items-center space-x-3">
+              {/* Export Button - Only show in view mode */}
+              {viewMode === 'view' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport('word')}>
+                      Export as Word
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              
               {/* View/Edit Mode Toggle */}
               <div className="flex bg-gray-100 rounded-md p-1">
                 <Button

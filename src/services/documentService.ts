@@ -1,4 +1,3 @@
-
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -9,30 +8,61 @@ const generateId = (): string => {
 
 export const documentService = {
   // Get all documents
-  getDocuments: async (): Promise<Document[]> => {
+  getDocuments: async (category?: string): Promise<Document[]> => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('documents')
-        .select('*')
+        .select(`
+          *,
+          document_sections (
+            id,
+            content,
+            template_section_id,
+            template_sections (
+              id,
+              name,
+              position,
+              level,
+              description
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (category) {
+        query = query.eq('category', category);
+      }
 
-      // Add null check for data
-      if (!data) return [];
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+
+      // Add null check to fix TypeScript error
+      if (!data) {
+        return [];
+      }
 
       return data.map(doc => ({
         id: doc.id,
         title: doc.title,
-        description: '', // No description field in the documents table
-        category: 'Specialebeskrivelser',
-        specialty: 'Unknown', // This will be determined by the template
-        sections: [], // Sections will be loaded separately
-        createdAt: doc.created_at || '',
-        updatedAt: doc.updated_at || '',
+        category: doc.category || 'general',
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+        sections: (doc.document_sections || []).map((section: any) => ({
+          id: section.id,
+          title: section.template_sections?.name || 'Untitled Section',
+          content: section.content || '',
+          order: section.template_sections?.position || 0,
+          documentId: doc.id,
+          createdAt: section.created_at || doc.created_at,
+          updatedAt: section.updated_at || doc.updated_at
+        }))
       }));
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error in getDocuments:', error);
       throw error;
     }
   },
