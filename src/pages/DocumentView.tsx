@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import DocumentEditor from '@/components/DocumentEditor';
+import DocumentContinuousView from '@/components/DocumentContinuousView';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Trash2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ChevronLeft, Trash2, Edit, Eye } from 'lucide-react';
 
 const DocumentView = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,7 @@ const DocumentView = () => {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
   const { toast } = useToast();
 
   // Determine the back path based on the referring page or document category
@@ -104,16 +105,42 @@ const DocumentView = () => {
             <ChevronLeft className="h-4 w-4 mr-1" />
             {getBackLabel()}
           </Button>
+          
           {document && (
-            <Button 
-              variant="outline"
-              onClick={handleDeleteDocument}
-              disabled={isDeleting}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isDeleting ? 'Deleting...' : 'Delete Document'}
-            </Button>
+            <div className="flex items-center space-x-3">
+              {/* View/Edit Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-md p-1">
+                <Button
+                  variant={viewMode === 'view' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('view')}
+                  className="flex items-center"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View
+                </Button>
+                <Button
+                  variant={viewMode === 'edit' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('edit')}
+                  className="flex items-center"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              </div>
+              
+              {/* Delete Button */}
+              <Button 
+                variant="outline"
+                onClick={handleDeleteDocument}
+                disabled={isDeleting}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isDeleting ? 'Deleting...' : 'Delete Document'}
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -126,7 +153,13 @@ const DocumentView = () => {
           <div className="h-36 bg-gray-200 rounded w-full"></div>
         </div>
       ) : document ? (
-        <DocumentEditor document={document} onUpdate={handleUpdateDocument} />
+        <>
+          {viewMode === 'view' ? (
+            <DocumentContinuousView document={document} />
+          ) : (
+            <DocumentEditor document={document} onUpdate={handleUpdateDocument} />
+          )}
+        </>
       ) : (
         <div className="text-center p-12">
           <h2 className="text-xl font-medium text-gray-800">Document not found</h2>
