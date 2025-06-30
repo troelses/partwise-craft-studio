@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   PlusCircle, 
@@ -11,7 +10,7 @@ import {
 import { Document, DocumentSection } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -314,13 +313,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
             {editingSection === section.id ? (
               <div className="space-y-3">
                 <div>
-                  <label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">Content for: {section.title}</label>
-                  <Textarea
-                    id={`section-content-${section.id}`}
-                    value={section.content}
-                    onChange={(e) => handleSectionChange(section.id, 'content', e.target.value)}
-                    className="w-full min-h-[150px]"
-                    rows={6}
+                  <label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">
+                    Content for: {section.title}
+                  </label>
+                  <RichTextEditor
+                    content={section.content}
+                    onChange={(content) => handleSectionChange(section.id, 'content', content)}
                     placeholder={`Enter content for ${section.title}...`}
                   />
                 </div>
@@ -351,8 +349,15 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="mt-2 whitespace-pre-wrap">
-                  {section.content || <span className="text-gray-400 italic">No content - click edit to add content</span>}
+                <div className="mt-2">
+                  {section.content ? (
+                    <div className="prose max-w-none">
+                      {/* Render rich text content in preview mode */}
+                      {section.content}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 italic">No content - click edit to add content</span>
+                  )}
                 </div>
               </div>
             )}

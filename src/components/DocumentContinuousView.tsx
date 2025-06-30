@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Document } from '@/types/document';
+import { renderRichText } from '@/utils/richTextRenderer';
 
 interface DocumentContinuousViewProps {
   document: Document;
@@ -30,8 +31,10 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
             </h2>
             
             {/* Section Content */}
-            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {section.content || (
+            <div className="text-gray-700 leading-relaxed">
+              {section.content ? (
+                renderRichText(section.content)
+              ) : (
                 <span className="text-gray-400 italic">
                   [No content provided for this section]
                 </span>
