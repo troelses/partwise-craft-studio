@@ -18,7 +18,10 @@ export const documentService = {
 
       if (error) throw error;
 
-      return (data || []).map(doc => ({
+      // Add null check for data
+      if (!data) return [];
+
+      return data.map(doc => ({
         id: doc.id,
         title: doc.title,
         description: '', // No description field in the documents table
