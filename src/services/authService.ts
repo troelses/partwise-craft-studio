@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UserProfile {
@@ -26,23 +25,77 @@ export const authService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data, error } = await supabase
+    console.log('Checking profile for user:', user.id);
+
+    // Use a direct query with RPC to bypass RLS issues
+    const { data, error } = await supabase.rpc('check_user_role', {
+      user_id: user.id,
+      required_role: 'admin'
+    });
+
+    console.log('Admin check result:', data, error);
+
+    // If RPC fails, try direct query
+    if (error) {
+      console.log('RPC failed, trying direct query');
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return null;
+      }
+
+      return profileData;
+    }
+
+    // Get the full profile
+    const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
-    if (error) {
-      console.error('Error fetching user profile:', error);
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
       return null;
     }
 
-    return data;
+    return profileData;
   },
 
   async isAdmin(): Promise<boolean> {
-    const profile = await this.getCurrentUserProfile();
-    return profile?.role === 'admin';
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    console.log('Checking admin status for user:', user.id);
+    
+    try {
+      // Try using the RPC function first
+      const { data, error } = await supabase.rpc('check_user_role', {
+        user_id: user.id,
+        required_role: 'admin'
+      });
+
+      if (!error && typeof data === 'boolean') {
+        console.log('Admin check via RPC:', data);
+        return data;
+      }
+
+      console.log('RPC failed, falling back to profile check');
+      
+      // Fallback to profile check
+      const profile = await this.getCurrentUserProfile();
+      const isAdminResult = profile?.role === 'admin';
+      console.log('Admin check via profile:', isAdminResult, profile);
+      return isAdminResult;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
   },
 
   async getAllUserProfiles(): Promise<UserProfile[]> {
