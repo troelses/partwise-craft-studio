@@ -1,4 +1,3 @@
-
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -296,5 +295,88 @@ export const documentService = {
   deleteSection: async (documentId: string, sectionId: string): Promise<boolean> => {
     // This is a mock implementation for non-template documents
     return true;
+  },
+
+  // Check if current user is team lead for a document
+  isTeamLead: async (documentId: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data, error } = await supabase.rpc('check_team_lead', {
+        user_id: user.id,
+        doc_id: documentId
+      });
+
+      if (error) {
+        console.error('Error checking team lead status:', error);
+        return false;
+      }
+
+      return data || false;
+    } catch (error) {
+      console.error('Error checking team lead status:', error);
+      return false;
+    }
+  },
+
+  // Get document sections with approval status for team lead review
+  getDocumentSectionsForApproval: async (documentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('document_sections')
+        .select(`
+          *,
+          template_sections (
+            id,
+            name,
+            position,
+            description
+          )
+        `)
+        .eq('document_id', documentId)
+        .order('template_sections(position)');
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching sections for approval:', error);
+      throw error;
+    }
+  },
+
+  // Approve a section by moving draft_content to published_content
+  approveSection: async (sectionId: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Get the current section to access draft_content
+      const { data: section, error: fetchError } = await supabase
+        .from('document_sections')
+        .select('draft_content')
+        .eq('id', sectionId)
+        .single();
+
+      if (fetchError || !section) throw fetchError;
+
+      // Move draft_content to published_content and mark as approved
+      const { error } = await supabase
+        .from('document_sections')
+        .update({
+          published_content: section.draft_content,
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+          is_approved: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sectionId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error approving section:', error);
+      return false;
+    }
   }
 };

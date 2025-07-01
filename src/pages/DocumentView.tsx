@@ -3,11 +3,12 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import DocumentEditor from '@/components/DocumentEditor';
 import DocumentContinuousView from '@/components/DocumentContinuousView';
+import TeamLeadApproval from '@/components/TeamLeadApproval';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Trash2, Edit, Eye, Download } from 'lucide-react';
+import { ChevronLeft, Trash2, Edit, Eye, Download, Shield } from 'lucide-react';
 import { exportToWord, exportToPDF } from '@/utils/documentExporter';
 import {
   DropdownMenu,
@@ -23,7 +24,8 @@ const DocumentView = () => {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
+  const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve'>('view');
+  const [isTeamLead, setIsTeamLead] = useState(false);
   const { toast } = useToast();
 
   // Determine the back path based on the referring page or document category
@@ -52,6 +54,10 @@ const DocumentView = () => {
         const doc = await documentService.getDocument(id);
         if (doc) {
           setDocument(doc);
+          
+          // Check if current user is team lead for this document
+          const teamLeadStatus = await documentService.isTeamLead(id);
+          setIsTeamLead(teamLeadStatus);
         } else {
           toast({
             title: "Error",
@@ -160,7 +166,7 @@ const DocumentView = () => {
                 </DropdownMenu>
               )}
               
-              {/* View/Edit Mode Toggle */}
+              {/* View/Edit/Approve Mode Toggle */}
               <div className="flex bg-gray-100 rounded-md p-1">
                 <Button
                   variant={viewMode === 'view' ? 'default' : 'ghost'}
@@ -180,6 +186,17 @@ const DocumentView = () => {
                   <Edit className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
+                {isTeamLead && (
+                  <Button
+                    variant={viewMode === 'approve' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('approve')}
+                    className="flex items-center"
+                  >
+                    <Shield className="h-4 w-4 mr-1" />
+                    Approve
+                  </Button>
+                )}
               </div>
               
               {/* Delete Button */}
@@ -206,10 +223,16 @@ const DocumentView = () => {
         </div>
       ) : document ? (
         <>
-          {viewMode === 'view' ? (
-            <DocumentContinuousView document={document} />
-          ) : (
-            <DocumentEditor document={document} onUpdate={handleUpdateDocument} />
+          {viewMode === 'view' && <DocumentContinuousView document={document} />}
+          {viewMode === 'edit' && <DocumentEditor document={document} onUpdate={handleUpdateDocument} />}
+          {viewMode === 'approve' && isTeamLead && (
+            <TeamLeadApproval 
+              documentId={document.id} 
+              onApprovalChange={() => {
+                // Optionally refresh document data after approval
+                console.log('Section approved, document updated');
+              }} 
+            />
           )}
         </>
       ) : (

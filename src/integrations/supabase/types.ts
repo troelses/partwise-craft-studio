@@ -156,6 +156,8 @@ export type Database = {
       }
       document_sections: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           content: string
           document_id: string | null
           draft_content: Json | null
@@ -169,6 +171,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           content?: string
           document_id?: string | null
           draft_content?: Json | null
@@ -182,6 +186,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           content?: string
           document_id?: string | null
           draft_content?: Json | null
@@ -216,6 +222,7 @@ export type Database = {
           created_at: string | null
           id: string
           owner_id: string | null
+          team_lead_id: string | null
           template_id: string | null
           title: string
           updated_at: string | null
@@ -224,6 +231,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           owner_id?: string | null
+          team_lead_id?: string | null
           template_id?: string | null
           title: string
           updated_at?: string | null
@@ -232,6 +240,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           owner_id?: string | null
+          team_lead_id?: string | null
           template_id?: string | null
           title?: string
           updated_at?: string | null
@@ -479,6 +488,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_team_lead: {
+        Args: { user_id: string; doc_id: string }
+        Returns: boolean
+      }
       check_user_role: {
         Args: { user_id: string; required_role: string }
         Returns: boolean
