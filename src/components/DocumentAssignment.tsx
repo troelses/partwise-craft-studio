@@ -48,9 +48,12 @@ const DocumentAssignment = () => {
   };
 
   const handleAssignTeamLead = async (documentId: string, userId: string) => {
+    // If userId is "unassigned", we pass empty string to remove assignment
+    const userIdToAssign = userId === "unassigned" ? "" : userId;
+    
     setAssigningDocument(documentId);
     try {
-      const success = await documentService.assignTeamLead(documentId, userId);
+      const success = await documentService.assignTeamLead(documentId, userIdToAssign);
       if (success) {
         toast({
           title: "Success",
@@ -105,7 +108,7 @@ const DocumentAssignment = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <Select
-                  value={document.team_lead_id || ''}
+                  value={document.team_lead_id || 'unassigned'}
                   onValueChange={(userId) => handleAssignTeamLead(document.id, userId)}
                   disabled={assigningDocument === document.id}
                 >
@@ -113,7 +116,7 @@ const DocumentAssignment = () => {
                     <SelectValue placeholder="Assign team lead" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No team lead</SelectItem>
+                    <SelectItem value="unassigned">No team lead</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.user_id} value={user.user_id}>
                         {user.email} ({user.role})
