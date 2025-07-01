@@ -1,3 +1,4 @@
+
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,6 +18,8 @@ export const documentService = {
           document_sections (
             id,
             content,
+            draft_content,
+            published_content,
             template_section_id,
             template_sections (
               id,
@@ -55,7 +58,8 @@ export const documentService = {
         sections: (doc.document_sections || []).map((section: any) => ({
           id: section.id,
           title: section.template_sections?.name || 'Untitled Section',
-          content: section.content || '',
+          // Use draft_content if available, otherwise fall back to content
+          content: section.draft_content ? JSON.stringify(section.draft_content) : (section.content || ''),
           order: section.template_sections?.position || 0,
           documentId: doc.id,
           createdAt: section.created_at || doc.created_at || '',
@@ -118,7 +122,8 @@ export const documentService = {
         return {
           id: existingSection?.id || generateId(),
           title: templateSection.name || '',
-          content: existingSection?.content || '',
+          // Use draft_content if available, otherwise fall back to content
+          content: existingSection?.draft_content ? JSON.stringify(existingSection.draft_content) : (existingSection?.content || ''),
           order: templateSection.position || 0,
           documentId: id,
           createdAt: existingSection?.created_at || new Date().toISOString(),
@@ -223,6 +228,28 @@ export const documentService = {
 
   updateSection: async (section: DocumentSection): Promise<DocumentSection> => {
     try {
+      // Parse content as JSON if it's a string
+      let draftContent;
+      try {
+        draftContent = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+      } catch {
+        // If parsing fails, wrap plain text in a basic TipTap structure
+        draftContent = {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: section.content
+                }
+              ]
+            }
+          ]
+        };
+      }
+
       // Check if this document section already exists in the database
       const { data: existingSection } = await supabase
         .from('document_sections')
@@ -232,24 +259,24 @@ export const documentService = {
         .single();
 
       if (existingSection) {
-        // Update existing section
+        // Update existing section with draft_content
         const { error } = await supabase
           .from('document_sections')
           .update({
-            content: section.content,
+            draft_content: draftContent,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingSection.id);
 
         if (error) throw error;
       } else {
-        // Create new section
+        // Create new section with draft_content
         const { error } = await supabase
           .from('document_sections')
           .insert({
             document_id: section.documentId,
             template_section_id: section.templateSectionId || '',
-            content: section.content,
+            draft_content: draftContent,
             updated_at: new Date().toISOString(),
           });
 

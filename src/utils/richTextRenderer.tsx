@@ -60,11 +60,19 @@ const renderTipTapContent = (node: TipTapNode): React.ReactNode => {
   }
 };
 
-export const renderRichText = (jsonContent: string): React.ReactNode => {
+export const renderRichText = (jsonContent: string | object): React.ReactNode => {
   if (!jsonContent) return null;
   
   try {
-    const parsed = JSON.parse(jsonContent);
+    let parsed;
+    
+    // Handle both string and object inputs
+    if (typeof jsonContent === 'string') {
+      parsed = JSON.parse(jsonContent);
+    } else {
+      parsed = jsonContent;
+    }
+    
     if (parsed.content) {
       return parsed.content.map((node: TipTapNode, index: number) => (
         <React.Fragment key={index}>
@@ -74,7 +82,8 @@ export const renderRichText = (jsonContent: string): React.ReactNode => {
     }
   } catch (error) {
     // If JSON parsing fails, treat as plain text
-    return <p className="whitespace-pre-wrap">{jsonContent}</p>;
+    const textContent = typeof jsonContent === 'string' ? jsonContent : JSON.stringify(jsonContent);
+    return <p className="whitespace-pre-wrap">{textContent}</p>;
   }
   
   return null;

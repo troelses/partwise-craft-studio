@@ -119,28 +119,78 @@ export type Database = {
           },
         ]
       }
+      document_section_versions: {
+        Row: {
+          content: Json
+          created_at: string | null
+          created_by: string | null
+          document_section_id: string | null
+          id: string
+          is_published: boolean | null
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_section_id?: string | null
+          id?: string
+          is_published?: boolean | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_section_id?: string | null
+          id?: string
+          is_published?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_section_versions_document_section_id_fkey"
+            columns: ["document_section_id"]
+            isOneToOne: false
+            referencedRelation: "document_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_sections: {
         Row: {
           content: string
           document_id: string | null
+          draft_content: Json | null
           id: string
+          is_approved: boolean | null
           last_edited_by: string | null
+          locked_at: string | null
+          locked_by: string | null
+          published_content: Json | null
           template_section_id: string | null
           updated_at: string | null
         }
         Insert: {
           content?: string
           document_id?: string | null
+          draft_content?: Json | null
           id?: string
+          is_approved?: boolean | null
           last_edited_by?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          published_content?: Json | null
           template_section_id?: string | null
           updated_at?: string | null
         }
         Update: {
           content?: string
           document_id?: string | null
+          draft_content?: Json | null
           id?: string
+          is_approved?: boolean | null
           last_edited_by?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          published_content?: Json | null
           template_section_id?: string | null
           updated_at?: string | null
         }
@@ -429,7 +479,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_user_role: {
+        Args: { user_id: string; required_role: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

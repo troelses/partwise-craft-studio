@@ -27,32 +27,7 @@ export const authService = {
 
     console.log('Checking profile for user:', user.id);
 
-    // Use a direct query with RPC to bypass RLS issues
-    const { data, error } = await supabase.rpc('check_user_role', {
-      user_id: user.id,
-      required_role: 'admin'
-    });
-
-    console.log('Admin check result:', data, error);
-
-    // If RPC fails, try direct query
-    if (error) {
-      console.log('RPC failed, trying direct query');
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        return null;
-      }
-
-      return profileData;
-    }
-
-    // Get the full profile
+    // Get the full profile directly
     const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
       .select('*')

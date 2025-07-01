@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   PlusCircle, 
@@ -90,7 +89,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
           return {
             id: existingSection.id,
             title: templateSection.name,
-            content: existingSection.content || '',
+            // Use draft_content if available, otherwise fall back to content
+            content: existingSection.draft_content ? JSON.stringify(existingSection.draft_content) : (existingSection.content || ''),
             order: templateSection.position,
             documentId: document.id,
             createdAt: existingSection.updated_at || new Date().toISOString(),
@@ -193,15 +193,37 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
     if (!section || !section.templateSection) return;
     
     try {
+      // Parse content as JSON for draft_content
+      let draftContent;
+      try {
+        draftContent = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+      } catch {
+        // If parsing fails, wrap plain text in a basic TipTap structure
+        draftContent = {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: section.content
+                }
+              ]
+            }
+          ]
+        };
+      }
+
       // Check if this is a new section (temp ID) or existing one
       if (section.id.startsWith('temp-')) {
-        // Create new document section
+        // Create new document section with draft_content
         const { data, error } = await supabase
           .from('document_sections')
           .insert({
             document_id: document.id,
             template_section_id: section.templateSection.id,
-            content: section.content,
+            draft_content: draftContent,
             updated_at: new Date().toISOString()
           })
           .select()
@@ -215,11 +237,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
         );
         setDocumentSections(updatedSections);
       } else {
-        // Update existing section
+        // Update existing section with draft_content
         const { error } = await supabase
           .from('document_sections')
           .update({ 
-            content: section.content,
+            draft_content: draftContent,
             updated_at: new Date().toISOString()
           })
           .eq('id', section.id);
@@ -230,13 +252,13 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
       setEditingSection(null);
       toast({
         title: "Success",
-        description: "Section updated successfully",
+        description: "Section draft saved successfully",
       });
     } catch (error) {
       console.error('Error updating section:', error);
       toast({
         title: "Error",
-        description: "Failed to update section",
+        description: "Failed to save section draft",
         variant: "destructive",
       });
     } finally {
