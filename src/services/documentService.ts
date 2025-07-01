@@ -1,5 +1,3 @@
-
-
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -116,7 +114,7 @@ export const documentService = {
         }
       });
 
-      // Build sections array based on template structure
+      // Build sections array based on template structure - handle null/undefined templateSections
       const sections: DocumentSection[] = (templateSections || []).map(templateSection => {
         const existingSection = existingSectionsMap.get(templateSection.id);
         
@@ -448,4 +446,3 @@ export const documentService = {
     }
   }
 };
-
