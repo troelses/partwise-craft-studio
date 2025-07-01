@@ -1,4 +1,5 @@
 
+
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -400,20 +401,46 @@ export const documentService = {
   // Get all documents for admin management
   getAllDocumentsForAdmin: async () => {
     try {
-      const { data, error } = await supabase
+      // First get all documents
+      const { data: documents, error: docsError } = await supabase
         .from('documents')
-        .select(`
-          *,
-          user_profiles!documents_team_lead_id_fkey(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
+      if (docsError) throw docsError;
+
+      if (!documents) {
+        return [];
+      }
+
+      // Then get user profiles for team leads
+      const teamLeadIds = documents
+        .map(doc => doc.team_lead_id)
+        .filter(id => id !== null);
+
+      let userProfiles: any[] = [];
+      if (teamLeadIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('user_id, email')
+          .in('user_id', teamLeadIds);
+
+        if (profilesError) throw profilesError;
+        userProfiles = profiles || [];
+      }
+
+      // Create a map of user profiles by user_id
+      const profilesMap = new Map();
+      userProfiles.forEach(profile => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
       // Transform the data to match the expected interface
-      return (data || []).map(doc => ({
+      return documents.map(doc => ({
         ...doc,
-        team_lead: doc.user_profiles ? { email: doc.user_profiles.email } : null
+        team_lead: doc.team_lead_id && profilesMap.has(doc.team_lead_id) 
+          ? { email: profilesMap.get(doc.team_lead_id).email } 
+          : null
       }));
     } catch (error) {
       console.error('Error fetching documents for admin:', error);
@@ -421,3 +448,4 @@ export const documentService = {
     }
   }
 };
+
