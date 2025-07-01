@@ -1,3 +1,4 @@
+
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -403,12 +404,17 @@ export const documentService = {
         .from('documents')
         .select(`
           *,
-          team_lead:user_profiles!documents_team_lead_id_fkey(email)
+          user_profiles!documents_team_lead_id_fkey(email)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match the expected interface
+      return (data || []).map(doc => ({
+        ...doc,
+        team_lead: doc.user_profiles ? { email: doc.user_profiles.email } : null
+      }));
     } catch (error) {
       console.error('Error fetching documents for admin:', error);
       return [];

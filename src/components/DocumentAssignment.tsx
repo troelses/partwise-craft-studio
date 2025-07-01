@@ -34,7 +34,7 @@ const DocumentAssignment = () => {
         authService.getAllUserProfiles()
       ]);
       
-      setDocuments(documentsData);
+      setDocuments(documentsData as DocumentWithTeamLead[]);
       setUsers(usersData);
     } catch (error) {
       toast({
