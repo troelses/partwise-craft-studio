@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, Plus, Settings, LogOut, Shield, BookOpen, Target } from 'lucide-react';
+import { FileText, Plus, Settings, LogOut, Shield, BookOpen, Target, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/authService';
@@ -16,14 +16,39 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTeamLead, setIsTeamLead] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
+    checkTeamLeadStatus();
   }, []);
 
   const checkAdminStatus = async () => {
     const adminStatus = await authService.isAdmin();
     setIsAdmin(adminStatus);
+  };
+
+  const checkTeamLeadStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if user is a team lead for any document
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('team_lead_id', user.id)
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking team lead status:', error);
+        return;
+      }
+
+      setIsTeamLead(data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking team lead status:', error);
+    }
   };
 
   const handleSignOut = async () => {
@@ -43,6 +68,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { path: '/specialebeskrivelser', label: 'Specialebeskrivelser', icon: BookOpen },
     { path: '/maalbeskrivelser', label: 'Målbeskrivelser', icon: Target },
+    ...(isTeamLead ? [{ path: '/team-lead', label: 'Team Lead', icon: Users }] : []),
     { path: '/settings', label: 'Settings', icon: Settings },
     ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: Shield }] : []),
   ];

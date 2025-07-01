@@ -1,3 +1,4 @@
+
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -255,7 +256,7 @@ export const documentService = {
         .select('id')
         .eq('document_id', section.documentId)
         .eq('template_section_id', section.templateSectionId || '')
-        .single();
+        .maybeSingle();
 
       if (existingSection) {
         // Update existing section with draft_content
@@ -356,7 +357,7 @@ export const documentService = {
         .from('document_sections')
         .select('draft_content')
         .eq('id', sectionId)
-        .single();
+        .maybeSingle();
 
       if (fetchError || !section) throw fetchError;
 
