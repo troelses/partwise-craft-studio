@@ -1,4 +1,3 @@
-
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -378,6 +377,41 @@ export const documentService = {
     } catch (error) {
       console.error('Error approving section:', error);
       return false;
+    }
+  },
+
+  // Assign team lead to document
+  assignTeamLead: async (documentId: string, userId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({ team_lead_id: userId })
+        .eq('id', documentId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error assigning team lead:', error);
+      return false;
+    }
+  },
+
+  // Get all documents for admin management
+  getAllDocumentsForAdmin: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select(`
+          *,
+          team_lead:user_profiles!documents_team_lead_id_fkey(email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching documents for admin:', error);
+      return [];
     }
   }
 };

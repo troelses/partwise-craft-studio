@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Users, Settings, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import DocumentAssignment from './DocumentAssignment';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -216,6 +217,8 @@ const AdminPanel = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <DocumentAssignment />
 
       <Card>
         <CardHeader>
