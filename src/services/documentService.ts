@@ -74,7 +74,7 @@ export const documentService = {
 
   // Get documents by category
   getDocumentsByCategory: async (category: string): Promise<Document[]> => {
-    return this.getDocuments(); // For now, return all documents
+    return documentService.getDocuments(); // For now, return all documents
   },
 
   // Get a single document
