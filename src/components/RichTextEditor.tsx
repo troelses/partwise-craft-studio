@@ -18,6 +18,8 @@ import {
   Quote,
   Undo,
   Redo,
+  IndentIncrease,
+  IndentDecrease,
 } from 'lucide-react'
 
 interface RichTextEditorProps {
@@ -132,6 +134,26 @@ export default function RichTextEditor({
           className={editor.isActive('orderedList') ? 'bg-gray-200' : ''}
         >
           <ListOrdered className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
+          disabled={!editor.can().sinkListItem('listItem')}
+          title="Indent list item"
+        >
+          <IndentIncrease className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().liftListItem('listItem').run()}
+          disabled={!editor.can().liftListItem('listItem')}
+          title="Outdent list item"
+        >
+          <IndentDecrease className="h-4 w-4" />
         </Button>
 
         <Button
