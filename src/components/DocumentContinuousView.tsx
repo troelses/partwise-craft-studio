@@ -161,11 +161,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
-                {section.templateSection?.description && (
-                  <p className="text-sm text-gray-600 mb-3 italic">
-                    {section.templateSection.description}
-                  </p>
-                )}
               </div>
               <Button
                 variant="outline"
