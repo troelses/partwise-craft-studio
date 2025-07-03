@@ -41,17 +41,20 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasFocusedSection, setHasFocusedSection] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchTemplateAndDocumentSections();
   }, [document.id]);
 
+  // Handle focus section only once when documentSections are loaded and we haven't focused yet
   useEffect(() => {
-    if (focusSection && documentSections.length > 0) {
+    if (focusSection && documentSections.length > 0 && !hasFocusedSection) {
       setEditingSection(focusSection);
+      setHasFocusedSection(true);
     }
-  }, [focusSection, documentSections]);
+  }, [focusSection, documentSections, hasFocusedSection]);
 
   const fetchTemplateAndDocumentSections = async () => {
     try {
