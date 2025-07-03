@@ -18,6 +18,7 @@ import { renderRichText } from '@/utils/richTextRenderer'
 interface DocumentEditorProps {
   document: Document;
   onUpdate: (updatedDoc: Document) => void;
+  focusSection?: string;
 }
 
 interface TemplateSection {
@@ -32,7 +33,7 @@ interface DocumentSectionWithTemplate extends DocumentSection {
   templateSection?: TemplateSection;
 }
 
-const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) => {
+const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, focusSection }) => {
   const [currentDocument, setCurrentDocument] = useState<Document>(document);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isEditingHeader, setIsEditingHeader] = useState(false);
@@ -45,6 +46,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
   useEffect(() => {
     fetchTemplateAndDocumentSections();
   }, [document.id]);
+
+  useEffect(() => {
+    if (focusSection && documentSections.length > 0) {
+      setEditingSection(focusSection);
+    }
+  }, [focusSection, documentSections]);
 
   const fetchTemplateAndDocumentSections = async () => {
     try {

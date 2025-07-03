@@ -1,57 +1,192 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
+import { supabase } from '@/integrations/supabase/client';
 import { renderRichText } from '@/utils/richTextRenderer';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DocumentContinuousViewProps {
   document: Document;
 }
 
+interface TemplateSection {
+  id: string;
+  name: string;
+  position: number;
+  level: number;
+  description?: string;
+}
+
+interface DocumentSectionWithTemplate {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+  documentId: string;
+  createdAt: string;
+  updatedAt: string;
+  templateSection?: TemplateSection;
+}
+
 const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ document }) => {
-  // Sort sections by order (position from template_sections)
-  const sortedSections = [...document.sections].sort((a, b) => a.order - b.order);
+  const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchDocumentSections();
+  }, [document.id]);
+
+  const fetchDocumentSections = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch template sections
+      const { data: templateData, error: templateError } = await supabase
+        .from('template_sections')
+        .select('*')
+        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .order('position');
+
+      if (templateError) {
+        throw templateError;
+      }
+
+      const templateSections = templateData || [];
+
+      // Fetch existing document sections
+      const { data: documentSectionsData, error: docSectionsError } = await supabase
+        .from('document_sections')
+        .select('*')
+        .eq('document_id', document.id);
+
+      if (docSectionsError) {
+        throw docSectionsError;
+      }
+
+      // Create a map of existing document sections by template_section_id
+      const existingSectionsMap = new Map();
+      (documentSectionsData || []).forEach(section => {
+        if (section.template_section_id) {
+          existingSectionsMap.set(section.template_section_id, section);
+        }
+      });
+
+      // Combine template sections with document sections
+      const combinedSections: DocumentSectionWithTemplate[] = templateSections.map(templateSection => {
+        const existingSection = existingSectionsMap.get(templateSection.id);
+        
+        if (existingSection) {
+          // Use published_content if available, otherwise fall back to draft_content or content
+          const content = existingSection.published_content 
+            ? JSON.stringify(existingSection.published_content)
+            : (existingSection.draft_content 
+              ? JSON.stringify(existingSection.draft_content) 
+              : (existingSection.content || ''));
+
+          return {
+            id: existingSection.id,
+            title: templateSection.name,
+            content,
+            order: templateSection.position,
+            documentId: document.id,
+            createdAt: existingSection.updated_at || new Date().toISOString(),
+            updatedAt: existingSection.updated_at || new Date().toISOString(),
+            templateSection
+          };
+        } else {
+          // Create placeholder for missing sections
+          return {
+            id: `temp-${templateSection.id}`,
+            title: templateSection.name,
+            content: '',
+            order: templateSection.position,
+            documentId: document.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            templateSection
+          };
+        }
+      });
+
+      setDocumentSections(combinedSections);
+    } catch (error) {
+      console.error('Error fetching document sections:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditSection = (sectionId: string) => {
+    // Navigate to edit mode with section focus
+    navigate(`/documents/${document.id}`, { 
+      state: { 
+        viewMode: 'edit',
+        focusSection: sectionId 
+      } 
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto animate-pulse space-y-4">
+        <div className="h-12 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-36 bg-gray-200 rounded w-full mt-6"></div>
+        <div className="h-36 bg-gray-200 rounded w-full"></div>
+      </div>
+    );
+  }
+
+  const sortedSections = [...documentSections].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-sm">
-      {/* Document Title */}
-      <div className="mb-8 border-b pb-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{document.title}</h1>
-        <div className="text-sm text-gray-500">
-          Category: {document.category} | Created: {new Date(document.createdAt).toLocaleDateString()}
+    <div className="max-w-4xl mx-auto">
+      {/* Document header */}
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <h1 className="text-3xl font-bold mb-4">{document.title}</h1>
+        <div className="p-3 bg-blue-50 rounded-md">
+          <p className="text-sm text-blue-700">
+            This document follows the Specialebeskrivelser template structure.
+          </p>
         </div>
       </div>
 
-      {/* Continuous Text Content */}
-      <div className="prose prose-lg max-w-none">
-        {sortedSections.map((section, index) => (
-          <div key={section.id} className="mb-8">
-            {/* Section Title */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-blue-500 pl-4">
-              {section.title}
-            </h2>
+      {/* Document sections */}
+      <div className="space-y-6">
+        {sortedSections.map((section) => (
+          <div key={section.id} className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
+                {section.templateSection?.description && (
+                  <p className="text-sm text-gray-600 mb-3 italic">
+                    {section.templateSection.description}
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEditSection(section.id)}
+                className="flex items-center ml-4"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            </div>
             
-            {/* Section Content */}
-            <div className="text-gray-700 leading-relaxed">
+            <div className="prose max-w-none">
               {section.content ? (
                 renderRichText(section.content)
               ) : (
-                <span className="text-gray-400 italic">
-                  [No content provided for this section]
-                </span>
+                <p className="text-gray-400 italic">No content available for this section.</p>
               )}
             </div>
-            
-            {/* Add spacing between sections, except for the last one */}
-            {index < sortedSections.length - 1 && (
-              <div className="mt-8 border-b border-gray-200"></div>
-            )}
           </div>
         ))}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-        Last updated: {new Date(document.updatedAt).toLocaleDateString()}
       </div>
     </div>
   );

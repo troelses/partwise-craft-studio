@@ -28,6 +28,13 @@ const DocumentView = () => {
   const [isTeamLead, setIsTeamLead] = useState(false);
   const { toast } = useToast();
 
+  // Check if we should start in edit mode with a focused section
+  useEffect(() => {
+    if (location.state?.viewMode) {
+      setViewMode(location.state.viewMode);
+    }
+  }, [location.state]);
+
   // Determine the back path based on the referring page or document category
   const getBackPath = () => {
     const referrer = location.state?.from;
@@ -224,7 +231,7 @@ const DocumentView = () => {
       ) : document ? (
         <>
           {viewMode === 'view' && <DocumentContinuousView document={document} />}
-          {viewMode === 'edit' && <DocumentEditor document={document} onUpdate={handleUpdateDocument} />}
+          {viewMode === 'edit' && <DocumentEditor document={document} onUpdate={handleUpdateDocument} focusSection={location.state?.focusSection} />}
           {viewMode === 'approve' && isTeamLead && (
             <TeamLeadApproval 
               documentId={document.id} 
