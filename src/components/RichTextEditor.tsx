@@ -31,10 +31,12 @@ export default function RichTextEditor({
   onChange,
   placeholder = 'Start typing...',
 }: RichTextEditorProps) {
+  const isUpdatingFromProps = useRef(false)
+
   const editor = useEditor({
     extensions: [
-      StarterKit,        // includes most defaults
-      BulletList,        // make 100% sure lists are in
+      StarterKit,
+      BulletList,
       OrderedList,
       ListItem,
       Underline,
@@ -49,8 +51,10 @@ export default function RichTextEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      // Report JSON after each change
-      onChange(JSON.stringify(editor.getJSON()))
+      // Only call onChange if we're not currently updating from props
+      if (!isUpdatingFromProps.current) {
+        onChange(JSON.stringify(editor.getJSON()))
+      }
     },
   })
 
@@ -58,14 +62,22 @@ export default function RichTextEditor({
   const prevContent = useRef(content)
   useEffect(() => {
     if (!editor) return
-    if (prevContent.current !== content) {
+    
+    // Get current content from editor
+    const currentContent = JSON.stringify(editor.getJSON())
+    
+    // Only update if the content actually differs
+    if (currentContent !== content) {
+      isUpdatingFromProps.current = true
+      
       try {
         const parsed = content ? JSON.parse(content) : ''
-        editor.commands.setContent(parsed)
+        editor.commands.setContent(parsed, false) // false = don't emit update event
       } catch {
         editor.commands.clearContent()
+      } finally {
+        isUpdatingFromProps.current = false
       }
-      prevContent.current = content
     }
   }, [content, editor])
 
