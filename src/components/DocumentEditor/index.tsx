@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
-import DocumentHeader from '@/components/DocumentHeader';
-import DocumentSection from '@/components/DocumentSection';
-import { useDocumentSections } from '@/hooks/useDocumentSections';
-import { useSectionEditor } from '@/hooks/useSectionEditor';
+import DocumentHeader from './DocumentHeader';
+import DocumentSection from './DocumentSection';
+import { useDocumentSections } from './hooks/useDocumentSections';
+import { useSectionEditor } from './hooks/useSectionEditor';
 
 interface DocumentEditorProps {
   document: Document;
