@@ -340,8 +340,51 @@ export type Database = {
         }
         Relationships: []
       }
+      specialty_collaborations: {
+        Row: {
+          collaborator_document_id: string
+          created_at: string
+          description: string
+          document_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          collaborator_document_id: string
+          created_at?: string
+          description: string
+          document_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          collaborator_document_id?: string
+          created_at?: string
+          description?: string
+          document_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialty_collaborations_collaborator_document_id_fkey"
+            columns: ["collaborator_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialty_collaborations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_sections: {
         Row: {
+          allows_list: boolean
           description: string | null
           id: string
           level: number
@@ -350,6 +393,7 @@ export type Database = {
           template_id: string | null
         }
         Insert: {
+          allows_list?: boolean
           description?: string | null
           id?: string
           level?: number
@@ -358,6 +402,7 @@ export type Database = {
           template_id?: string | null
         }
         Update: {
+          allows_list?: boolean
           description?: string | null
           id?: string
           level?: number

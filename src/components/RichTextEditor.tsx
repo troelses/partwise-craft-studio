@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
@@ -27,18 +27,42 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange, 
   placeholder = "Start typing..." 
 }) => {
+  const [localContent, setLocalContent] = useState(() => {
+    try {
+      return content ? JSON.parse(content) : '';
+    } catch {
+      return '';
+    }
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       TextStyle,
       Color,
     ],
-    content: content ? JSON.parse(content) : '',
+    content: localContent,
     onUpdate: ({ editor }) => {
       const json = editor.getJSON();
+      setLocalContent(json);
       onChange(JSON.stringify(json));
     },
   });
+
+  // Update editor content when prop changes
+  useEffect(() => {
+    if (editor && content !== JSON.stringify(localContent)) {
+      try {
+        const parsedContent = content ? JSON.parse(content) : '';
+        if (JSON.stringify(editor.getJSON()) !== content) {
+          editor.commands.setContent(parsedContent);
+        }
+      } catch {
+        // If content is not valid JSON, clear the editor
+        editor.commands.setContent('');
+      }
+    }
+  }, [content, editor, localContent]);
 
   if (!editor) {
     return null;
@@ -126,10 +150,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor Content */}
-      <div className="p-4 min-h-[150px]">
+      <div className="p-4 min-h-[150px] prose max-w-none">
         <EditorContent 
           editor={editor} 
-          className="prose prose-sm max-w-none focus:outline-none"
+          className="focus:outline-none"
         />
       </div>
     </div>
