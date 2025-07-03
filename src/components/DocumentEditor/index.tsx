@@ -10,9 +10,15 @@ interface DocumentEditorProps {
   document: Document;
   onUpdate: (updatedDoc: Document) => void;
   focusSection?: string;
+  preserveScroll?: boolean;
 }
 
-const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, focusSection }) => {
+const DocumentEditor: React.FC<DocumentEditorProps> = ({ 
+  document, 
+  onUpdate, 
+  focusSection,
+  preserveScroll = false 
+}) => {
   const [currentDocument, setCurrentDocument] = useState<Document>(document);
   const [hasFocusedSection, setHasFocusedSection] = useState(false);
 
@@ -37,8 +43,30 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
     if (focusSection && documentSections.length > 0 && !hasFocusedSection) {
       setEditingSection(focusSection);
       setHasFocusedSection(true);
+      
+      // If we should preserve scroll position, scroll to the section after a short delay
+      if (preserveScroll) {
+        const timer = setTimeout(() => {
+          const sectionElement = document.getElementById(`section-${focusSection}`);
+          if (sectionElement) {
+            sectionElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          } else {
+            // Fallback: try to restore previous scroll position
+            const savedScrollY = sessionStorage.getItem(`scroll-position-${document.id}`);
+            if (savedScrollY) {
+              window.scrollTo(0, parseInt(savedScrollY, 10));
+              sessionStorage.removeItem(`scroll-position-${document.id}`);
+            }
+          }
+        }, 100);
+        
+        return () => clearTimeout(timer);
+      }
     }
-  }, [focusSection, documentSections, hasFocusedSection, setEditingSection]);
+  }, [focusSection, documentSections, hasFocusedSection, setEditingSection, preserveScroll, document.id]);
 
   // Update current document when sections change
   useEffect(() => {
@@ -75,16 +103,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
 
       <div className="space-y-4">
         {sortedSections.map((section) => (
-          <DocumentSection
-            key={section.id}
-            section={section}
-            isEditing={editingSection === section.id}
-            onStartEdit={() => startEditingSection(section.id)}
-            onCancelEdit={cancelEditingSection}
-            onContentChange={(content) => handleSectionChange(section.id, content)}
-            onSave={() => saveSection(section.id)}
-            isSaving={isSaving}
-          />
+          <div key={section.id} id={`section-${section.id}`}>
+            <DocumentSection
+              section={section}
+              isEditing={editingSection === section.id}
+              onStartEdit={() => startEditingSection(section.id)}
+              onCancelEdit={cancelEditingSection}
+              onContentChange={(content) => handleSectionChange(section.id, content)}
+              onSave={() => saveSection(section.id)}
+              isSaving={isSaving}
+            />
+          </div>
         ))}
       </div>
     </div>

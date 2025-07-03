@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -231,7 +232,14 @@ const DocumentView = () => {
       ) : document ? (
         <>
           {viewMode === 'view' && <DocumentContinuousView document={document} />}
-          {viewMode === 'edit' && <DocumentEditor document={document} onUpdate={handleUpdateDocument} focusSection={location.state?.focusSection} />}
+          {viewMode === 'edit' && (
+            <DocumentEditor 
+              document={document} 
+              onUpdate={handleUpdateDocument} 
+              focusSection={location.state?.focusSection}
+              preserveScroll={location.state?.preserveScroll}
+            />
+          )}
           {viewMode === 'approve' && isTeamLead && (
             <TeamLeadApproval 
               documentId={document.id} 

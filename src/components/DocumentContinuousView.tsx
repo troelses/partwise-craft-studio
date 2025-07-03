@@ -120,11 +120,16 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
   };
 
   const handleEditSection = (sectionId: string) => {
+    // Store current scroll position before navigating
+    const currentScrollY = window.scrollY;
+    sessionStorage.setItem(`scroll-position-${document.id}`, currentScrollY.toString());
+    
     // Navigate to edit mode with section focus
     navigate(`/documents/${document.id}`, { 
       state: { 
         viewMode: 'edit',
-        focusSection: sectionId 
+        focusSection: sectionId,
+        preserveScroll: true
       } 
     });
   };
@@ -157,7 +162,7 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
       {/* Document sections */}
       <div className="space-y-6">
         {sortedSections.map((section) => (
-          <div key={section.id} className="bg-white p-6 rounded-lg shadow-sm">
+          <div key={section.id} className="bg-white p-6 rounded-lg shadow-sm" id={`section-${section.id}`}>
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
