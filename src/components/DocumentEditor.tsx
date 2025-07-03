@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import RichTextEditor from '@/components/RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { renderRichText } from '@/utils/richTextRenderer'
 
 interface DocumentEditorProps {
   document: Document;
@@ -389,7 +390,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate }) =
                   {section.content ? (
                     <div className="prose max-w-none">
                       {/* Render rich text content in preview mode */}
-                      {section.content}
+                      {renderRichText(section.content)}
                     </div>
                   ) : (
                     <span className="text-gray-400 italic">No content - click edit to add content</span>
