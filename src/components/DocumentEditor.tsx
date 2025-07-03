@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   PlusCircle, 
   Save, 
@@ -40,6 +40,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
   const [isSaving, setIsSaving] = useState(false);
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
+  const [originalSectionContent, setOriginalSectionContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasFocusedSection, setHasFocusedSection] = useState(false);
   const { toast } = useToast();
@@ -183,6 +184,34 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
     }
   };
 
+  // Start editing a section and store original content
+  const startEditingSection = (sectionId: string) => {
+    const section = documentSections.find(s => s.id === sectionId);
+    if (section) {
+      setOriginalSectionContent(section.content);
+      setEditingSection(sectionId);
+    }
+  };
+
+  // Cancel editing and restore original content
+  const cancelEditingSection = () => {
+    if (editingSection && originalSectionContent !== undefined) {
+      // Restore original content
+      const updatedSections = documentSections.map(section => 
+        section.id === editingSection ? { ...section, content: originalSectionContent } : section
+      );
+      
+      setDocumentSections(updatedSections);
+      setCurrentDocument({
+        ...currentDocument,
+        sections: updatedSections
+      });
+    }
+    
+    setEditingSection(null);
+    setOriginalSectionContent('');
+  };
+
   // Handle section content changes
   const handleSectionChange = (sectionId: string, field: 'title' | 'content', value: string) => {
     const updatedSections = documentSections.map(section => 
@@ -261,6 +290,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
       }
 
       setEditingSection(null);
+      setOriginalSectionContent('');
       toast({
         title: "Success",
         description: "Section draft saved successfully",
@@ -365,7 +395,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
                 <div className="flex space-x-2 justify-end">
                   <Button 
                     variant="outline" 
-                    onClick={() => setEditingSection(null)}
+                    onClick={cancelEditingSection}
                   >
                     Cancel
                   </Button>
@@ -391,7 +421,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ document, onUpdate, foc
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => setEditingSection(section.id)}
+                    onClick={() => startEditingSection(section.id)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
