@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -152,7 +153,7 @@ export default function RichTextEditor({
       </div>
 
       {/* Editor Content */}
-      <div className="p-4 prose max-w-none">
+      <div className="p-4 prose max-w-none [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-1">
         <EditorContent editor={editor} />
       </div>
     </div>
