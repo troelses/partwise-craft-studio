@@ -47,7 +47,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       // If we should preserve scroll position, scroll to the section after a short delay
       if (preserveScroll) {
         const timer = setTimeout(() => {
-          const sectionElement = document.getElementById(`section-${focusSection}`);
+          const sectionElement = window.document.getElementById(`section-${focusSection}`);
           if (sectionElement) {
             sectionElement.scrollIntoView({ 
               behavior: 'smooth', 
