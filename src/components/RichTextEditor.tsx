@@ -4,6 +4,9 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
+import BulletList from '@tiptap/extension-bullet-list'
+import OrderedList from '@tiptap/extension-ordered-list'
+import ListItem from '@tiptap/extension-list-item'
 import { Button } from '@/components/ui/button'
 import {
   Bold,
@@ -29,7 +32,10 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit,        // includes most defaults
+      BulletList,        // make 100% sure lists are in
+      OrderedList,
+      ListItem,
       Underline,
       TextStyle,
       Color,
