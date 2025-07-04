@@ -88,7 +88,7 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
     <div className="mb-6">
       <ScrollArea className="h-[350px]">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-white z-10">
             <TableRow>
               <TableHead>Specialebeskrivelser</TableHead>
               <TableHead className="text-right">Actions</TableHead>
