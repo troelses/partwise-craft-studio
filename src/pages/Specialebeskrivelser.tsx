@@ -85,9 +85,7 @@ const Specialebeskrivelser = () => {
           onSpecialtyChange={setActiveSpecialty}
         />
 
-        <div className="flex-1">
-          <DocumentList documents={filteredDocuments} isLoading={isLoading} />
-        </div>
+        <DocumentList documents={filteredDocuments} isLoading={isLoading} />
       </div>
     </Layout>
   );
