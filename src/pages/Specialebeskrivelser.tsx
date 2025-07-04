@@ -73,19 +73,27 @@ const Specialebeskrivelser = () => {
 
   return (
     <Layout>
-      <div className="space-y-6 min-h-screen flex flex-col">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Specialebeskrivelser</h1>
-          <p className="text-gray-500 mt-2">Manage your specialty descriptions</p>
+      <div className="min-h-screen flex flex-col">
+        {/* Fixed Header Section */}
+        <div className="bg-white sticky top-0 z-10 pb-6 border-b border-gray-200">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Specialebeskrivelser</h1>
+              <p className="text-gray-500 mt-2">Manage your specialty descriptions</p>
+            </div>
+
+            <SpecialtyList 
+              activeCategory="Specialebeskrivelser"
+              activeSpecialty={activeSpecialty}
+              onSpecialtyChange={setActiveSpecialty}
+            />
+          </div>
         </div>
 
-        <SpecialtyList 
-          activeCategory="Specialebeskrivelser"
-          activeSpecialty={activeSpecialty}
-          onSpecialtyChange={setActiveSpecialty}
-        />
-
-        <DocumentList documents={filteredDocuments} isLoading={isLoading} />
+        {/* Scrollable Content Area */}
+        <div className="flex-1 pt-6">
+          <DocumentList documents={filteredDocuments} isLoading={isLoading} />
+        </div>
       </div>
     </Layout>
   );
