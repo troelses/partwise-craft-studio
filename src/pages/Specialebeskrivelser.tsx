@@ -73,7 +73,7 @@ const Specialebeskrivelser = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 min-h-screen flex flex-col">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Specialebeskrivelser</h1>
           <p className="text-gray-500 mt-2">Manage your specialty descriptions</p>
@@ -85,7 +85,9 @@ const Specialebeskrivelser = () => {
           onSpecialtyChange={setActiveSpecialty}
         />
 
-        <DocumentList documents={filteredDocuments} isLoading={isLoading} />
+        <div className="flex-1">
+          <DocumentList documents={filteredDocuments} isLoading={isLoading} />
+        </div>
       </div>
     </Layout>
   );
