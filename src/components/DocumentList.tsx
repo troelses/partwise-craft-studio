@@ -13,7 +13,7 @@ interface DocumentListProps {
 const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
         {Array.from({ length: 6 }).map((_, index) => (
           <Card key={index} className="animate-pulse">
             <CardHeader className="pb-2">
@@ -54,7 +54,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => 
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in flex-1">
       {documents.map((doc) => (
         <Link to={`/documents/${doc.id}`} key={doc.id}>
           <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
