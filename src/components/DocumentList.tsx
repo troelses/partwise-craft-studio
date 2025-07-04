@@ -29,21 +29,6 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => 
     );
   }
 
-  if (documents.length === 0) {
-    return (
-      <div className="text-center p-8">
-        <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-        <h3 className="text-xl font-medium text-gray-800">No documents in this category</h3>
-        <p className="text-gray-500 mt-2">Create your first document to get started</p>
-        <Link to="/documents/new" className="mt-4 inline-block">
-          <button className="bg-document-blue hover:bg-blue-800 text-white py-2 px-4 rounded-md mt-4 transition-colors">
-            Create Document
-          </button>
-        </Link>
-      </div>
-    );
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', { 
