@@ -113,7 +113,7 @@ export const exportToWord = async (document: AppDocument) => {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const blob = new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     
     const url = URL.createObjectURL(blob);
     const link = globalThis.document.createElement('a');
