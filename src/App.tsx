@@ -26,14 +26,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
-          <Route path="/specialebeskrivelser" element={<AuthGuard><Specialebeskrivelser /></AuthGuard>} />
-          <Route path="/maalbeskrivelser" element={<AuthGuard><Maalbeskrivelser /></AuthGuard>} />
-          <Route path="/documents/:id" element={<AuthGuard><DocumentView /></AuthGuard>} />
-          <Route path="/documents/new" element={<AuthGuard><NewDocument /></AuthGuard>} />
-          <Route path="/team-lead" element={<AuthGuard><TeamLead /></AuthGuard>} />
-          <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-          <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
+          <Route path="/" element={<Index />} />
+          <Route path="/specialebeskrivelser" element={<Specialebeskrivelser />} />
+          <Route path="/maalbeskrivelser" element={<Maalbeskrivelser />} />
+          <Route path="/documents/:id" element={<DocumentView />} />
+          <Route path="/documents/new" element={<NewDocument />} />
+          <Route path="/team-lead" element={<TeamLead />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
