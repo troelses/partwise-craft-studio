@@ -2,8 +2,16 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://asmgutvwjlwqixxaqcrg.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzbWd1dHZ3amx3cWl4eGFxY3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ4MDUsImV4cCI6MjA2MzIyMDgwNX0.poX2ioKCXjsHPYJaPBsPiFs_DTqXoQPNWVDlf5v7eVE";
+// IMPORTANT: Only the anon (publishable) key is used here. This client runs in
+// the browser and is subject to Row Level Security. The service_role key grants
+// unrestricted database access and must NEVER be used in browser code — keep it
+// exclusively in server-side Edge Functions via Deno.env.get('SUPABASE_SERVICE_ROLE_KEY').
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error('Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY must be set.');
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

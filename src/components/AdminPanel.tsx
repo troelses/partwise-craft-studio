@@ -82,19 +82,19 @@ const AdminPanel = () => {
     setIsCreatingUser(true);
 
     try {
-      // Create the user account
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: newUserEmail,
-        password: newUserPassword,
-        email_confirm: true
+      // User creation is handled by the 'create-user' Edge Function, which runs
+      // server-side with the service_role key. The Admin API must never be called
+      // from the browser with the anon key.
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { email: newUserEmail, password: newUserPassword },
       });
 
       if (error) throw error;
 
-      if (data.user) {
+      if (data?.user) {
         // Update the user role if it's not the default 'viewer'
         if (newUserRole !== 'viewer') {
-          await authService.updateUserRole(data.user.id, newUserRole);
+          await authService.updateUserRole(data.user.id, newUserRole as 'admin' | 'editor' | 'viewer');
         }
 
         toast({

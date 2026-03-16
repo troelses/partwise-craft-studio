@@ -1,10 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
 export interface UserProfile {
   id: string;
   user_id: string;
   email: string;
-  role: string;
+  role: UserRole;
   created_at: string;
   updated_at: string;
 }
@@ -87,7 +89,7 @@ export const authService = {
     return data || [];
   },
 
-  async updateUserRole(userId: string, role: string): Promise<boolean> {
+  async updateUserRole(userId: string, role: UserRole): Promise<boolean> {
     const { error } = await supabase
       .from('user_profiles')
       .update({ role, updated_at: new Date().toISOString() })
@@ -130,14 +132,17 @@ export const authService = {
   ): Promise<boolean> {
     const { error } = await supabase
       .from('user_permissions')
-      .upsert({
-        user_id: userId,
-        document_id: documentId,
-        section_id: sectionId || null,
-        can_view: canView,
-        can_edit: canEdit,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(
+        {
+          user_id: userId,
+          document_id: documentId,
+          section_id: sectionId || null,
+          can_view: canView,
+          can_edit: canEdit,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'user_id,document_id,section_id' }
+      );
 
     if (error) {
       console.error('Error setting user permission:', error);

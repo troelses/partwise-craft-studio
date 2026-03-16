@@ -15,29 +15,19 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
+    // onAuthStateChange fires immediately with the current session on subscribe,
+    // so a separate getSession() call is not needed and would cause a race condition.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
+
         if (!session?.user) {
           navigate('/auth');
         }
       }
     );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (!session?.user) {
-        navigate('/auth');
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
