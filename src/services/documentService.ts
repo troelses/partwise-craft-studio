@@ -1,10 +1,9 @@
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 
-// Generate a simple ID
-const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 9);
-};
+// The single template used for all documents in this application.
+// If multiple templates are introduced, this should come from the document record.
+const DEFAULT_TEMPLATE_ID = DEFAULT_TEMPLATE_ID;
 
 export const documentService = {
   // Get all documents
@@ -93,7 +92,7 @@ export const documentService = {
       const { data: templateSections, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .eq('template_id', DEFAULT_TEMPLATE_ID)
         .order('position');
 
       if (templateError) throw templateError;
@@ -153,7 +152,7 @@ export const documentService = {
         .from('documents')
         .insert({
           title: document.title,
-          template_id: '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03',
+          template_id: DEFAULT_TEMPLATE_ID,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -212,17 +211,10 @@ export const documentService = {
     }
   },
 
-  addSection: async (documentId: string, section: Omit<DocumentSection, 'id' | 'documentId' | 'createdAt' | 'updatedAt'>): Promise<DocumentSection> => {
-    const newSection: DocumentSection = {
-      ...section,
-      id: generateId(),
-      documentId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // This is a mock implementation for non-template documents
-    return newSection;
+  addSection: async (_documentId: string, _section: Omit<DocumentSection, 'id' | 'documentId' | 'createdAt' | 'updatedAt'>): Promise<DocumentSection> => {
+    // Free-form section creation is not supported; all sections are derived from
+    // the document template. Use updateSection to save content for a template section.
+    throw new Error('addSection is not implemented. Save content via updateSection instead.');
   },
 
   updateSection: async (section: DocumentSection): Promise<DocumentSection> => {
@@ -293,8 +285,19 @@ export const documentService = {
   },
 
   deleteSection: async (documentId: string, sectionId: string): Promise<boolean> => {
-    // This is a mock implementation for non-template documents
-    return true;
+    try {
+      const { error } = await supabase
+        .from('document_sections')
+        .delete()
+        .eq('id', sectionId)
+        .eq('document_id', documentId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting section:', error);
+      throw error;
+    }
   },
 
   // Check if current user is team lead for a document
@@ -358,7 +361,8 @@ export const documentService = {
         .eq('id', sectionId)
         .maybeSingle();
 
-      if (fetchError || !section) throw fetchError;
+      if (fetchError) throw fetchError;
+      if (!section) throw new Error(`Section ${sectionId} not found`);
 
       // Move draft_content to published_content and mark as approved
       const { error } = await supabase

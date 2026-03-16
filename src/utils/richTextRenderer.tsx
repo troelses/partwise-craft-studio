@@ -58,8 +58,17 @@ const renderTipTapContent = (
     case 'heading': {
       const level = node.attrs?.level || 1;
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+      // Static class map — dynamic Tailwind classes are not safe to purge
+      const headingSizeClass: Record<number, string> = {
+        1: 'text-3xl',
+        2: 'text-2xl',
+        3: 'text-xl',
+        4: 'text-lg',
+        5: 'text-base',
+        6: 'text-sm',
+      };
       return (
-        <Tag key={index} className={`text-${4 - level}xl font-semibold mb-3`}>
+        <Tag key={index} className={`${headingSizeClass[level] ?? 'text-base'} font-semibold mb-3`}>
           {children}
         </Tag>
       );

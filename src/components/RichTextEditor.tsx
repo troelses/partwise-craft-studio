@@ -45,7 +45,10 @@ export default function RichTextEditor({
       TextStyle,
       Color,
     ],
-    content: content ? JSON.parse(content) : '',
+    content: (() => {
+      if (!content) return '';
+      try { return JSON.parse(content); } catch { return ''; }
+    })(),
     editorProps: {
       attributes: {
         class: 'focus:outline-none',
