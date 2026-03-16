@@ -19,8 +19,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isTeamLead, setIsTeamLead] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
-    checkTeamLeadStatus();
+    // Run once on mount for the current session, then re-run whenever the
+    // session changes (e.g. sign-in, sign-out, token refresh, role change).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAdminStatus();
+      checkTeamLeadStatus();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkAdminStatus = async () => {

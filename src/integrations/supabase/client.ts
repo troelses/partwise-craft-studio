@@ -2,6 +2,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// IMPORTANT: Only the anon (publishable) key is used here. This client runs in
+// the browser and is subject to Row Level Security. The service_role key grants
+// unrestricted database access and must NEVER be used in browser code — keep it
+// exclusively in server-side Edge Functions via Deno.env.get('SUPABASE_SERVICE_ROLE_KEY').
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 

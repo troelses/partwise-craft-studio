@@ -94,9 +94,9 @@ Without specifying `onConflict`, the upsert behaviour depends on Supabase inferr
 |---|----------|--------|------|
 | 1 | Critical | ✅ Fixed | `src/integrations/supabase/client.ts` |
 | 2 | Critical | ✅ Fixed | `.gitignore` |
-| 3 | Critical | ⚠️ Needs action | `src/components/AdminPanel.tsx:86` |
-| 4 | Medium   | ⚠️ Needs action | `src/components/AuthGuard.tsx` |
-| 5 | Medium   | ⚠️ Needs action | `src/components/Layout.tsx` |
-| 6 | High     | ℹ️ Awareness | — |
-| 7 | Low      | ⚠️ Needs action | `src/services/authService.ts:90` |
-| 8 | Low      | ⚠️ Needs action | `src/services/authService.ts:131` |
+| 3 | Critical | ✅ Fixed | `src/components/AdminPanel.tsx`, `supabase/functions/create-user/index.ts` |
+| 4 | Medium   | ✅ Fixed | `src/components/AuthGuard.tsx` |
+| 5 | Medium   | ✅ Fixed | `src/components/Layout.tsx` |
+| 6 | High     | ✅ Fixed | `src/integrations/supabase/client.ts` (comment + Edge Function enforces this) |
+| 7 | Low      | ✅ Fixed | `src/services/authService.ts` |
+| 8 | Low      | ✅ Fixed | `src/services/authService.ts` |
