@@ -41,7 +41,7 @@ export const authService = {
       return null;
     }
 
-    return profileData;
+    return profileData as UserProfile;
   },
 
   async isAdmin(): Promise<boolean> {
@@ -86,7 +86,7 @@ export const authService = {
       return [];
     }
 
-    return data || [];
+    return (data as UserProfile[]) || [];
   },
 
   async updateUserRole(userId: string, role: UserRole): Promise<boolean> {
