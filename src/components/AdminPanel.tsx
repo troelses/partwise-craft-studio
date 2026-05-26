@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { authService } from '@/services/authService';
-import { UserProfile } from '@/services/authService';
+import { UserProfile, UserRole } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,10 +56,10 @@ const AdminPanel = () => {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const success = await authService.updateUserRole(userId, newRole);
+      const success = await authService.updateUserRole(userId, newRole as UserRole);
       if (success) {
         setUsers(users.map(user => 
-          user.user_id === userId ? { ...user, role: newRole } : user
+          user.user_id === userId ? { ...user, role: newRole as UserRole } : user
         ));
         toast({
           title: "Success",
