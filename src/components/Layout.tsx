@@ -74,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { path: '/specialebeskrivelser', label: 'Specialebeskrivelser', icon: BookOpen },
     { path: '/maalbeskrivelser', label: 'Målbeskrivelser', icon: Target },
-    ...(isTeamLead ? [{ path: '/team-lead', label: 'Team Lead', icon: Users }] : []),
+    ...(isTeamLead ? [{ path: '/team-lead', label: 'Redaktør', icon: Users }] : []),
     { path: '/settings', label: 'Settings', icon: Settings },
     ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: Shield }] : []),
   ];

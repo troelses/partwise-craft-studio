@@ -57,16 +57,16 @@ const DocumentAssignment = () => {
       if (success) {
         toast({
           title: "Success",
-          description: "Team lead assigned successfully",
+          description: "Redaktør assigned successfully",
         });
         fetchData(); // Refresh data
       } else {
-        throw new Error('Failed to assign team lead');
+        throw new Error('Failed to assign redaktør');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to assign team lead",
+        description: "Failed to assign redaktør",
         variant: "destructive",
       });
     } finally {
@@ -99,7 +99,7 @@ const DocumentAssignment = () => {
                 <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
                   <UserCheck className="h-4 w-4" />
                   <span>
-                    Team Lead: {document.team_lead?.email || 'Not assigned'}
+                    Redaktør: {document.team_lead?.email || 'Not assigned'}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
@@ -113,10 +113,10 @@ const DocumentAssignment = () => {
                   disabled={assigningDocument === document.id}
                 >
                   <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Assign team lead" />
+                    <SelectValue placeholder="Assign redaktør" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">No team lead</SelectItem>
+                    <SelectItem value="unassigned">No redaktør</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.user_id} value={user.user_id}>
                         {user.email} ({user.role})
