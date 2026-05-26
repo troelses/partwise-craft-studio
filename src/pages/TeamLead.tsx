@@ -93,10 +93,10 @@ const TeamLead = () => {
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
             <Users className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Team Lead Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Redaktør Dashboard</h1>
           </div>
           <p className="text-gray-600">
-            Manage and approve content for documents assigned to you as team lead.
+            Manage and approve content for documents assigned to you as redaktør.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ const TeamLead = () => {
             <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-medium text-gray-800 mb-2">No Documents Assigned</h2>
             <p className="text-gray-500">
-              You are not currently assigned as team lead for any documents.
+              You are not currently assigned as redaktør for any documents.
             </p>
           </div>
         ) : (

@@ -117,7 +117,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold mb-4 flex items-center">
           <User className="h-5 w-5 mr-2" />
-          Team Lead Approval Dashboard
+          Redaktør Approval Dashboard
         </h2>
         <p className="text-gray-600 mb-4">
           Review and approve content changes for each section. Draft content will be published when approved.
