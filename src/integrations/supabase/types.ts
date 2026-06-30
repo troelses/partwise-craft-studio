@@ -546,6 +546,27 @@ export type Database = {
         Args: { required_role: string; user_id: string }
         Returns: boolean
       }
+      count_documents_containing: {
+        Args: { search_term: string }
+        Returns: number
+      }
+      get_document_text: {
+        Args: { doc_id: string }
+        Returns: {
+          body: string
+          section_title: string
+          title: string
+        }[]
+      }
+      search_documents: {
+        Args: { search_term: string }
+        Returns: {
+          document_id: string
+          matches: number
+          title: string
+        }[]
+      }
+      tiptap_to_text: { Args: { doc: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never
