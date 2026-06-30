@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, Plus, Settings, LogOut, Shield, BookOpen, Target, Users } from 'lucide-react';
+import { FileText, Plus, Settings, LogOut, Shield, BookOpen, Target, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/authService';
@@ -74,6 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { path: '/specialebeskrivelser', label: 'Specialebeskrivelser', icon: BookOpen },
     { path: '/maalbeskrivelser', label: 'Målbeskrivelser', icon: Target },
+    { path: '/ask-ai', label: 'Spørg AI', icon: MessageSquare },
     ...(isTeamLead ? [{ path: '/team-lead', label: 'Redaktør', icon: Users }] : []),
     { path: '/settings', label: 'Settings', icon: Settings },
     ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: Shield }] : []),
