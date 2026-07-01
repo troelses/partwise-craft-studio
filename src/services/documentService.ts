@@ -263,6 +263,9 @@ export const documentService = {
           .from('document_sections')
           .update({
             draft_content: draftContent,
+            is_approved: false,
+            approved_by: null,
+            approved_at: null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingSection.id);
