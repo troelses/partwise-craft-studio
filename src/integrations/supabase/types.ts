@@ -124,6 +124,44 @@ export type Database = {
           },
         ]
       }
+      document_access: {
+        Row: {
+          created_at: string
+          document_id: string
+          granted_by: string | null
+          id: string
+          permission: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          granted_by?: string | null
+          id?: string
+          permission: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          granted_by?: string | null
+          id?: string
+          permission?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_section_versions: {
         Row: {
           content: Json
@@ -225,6 +263,7 @@ export type Database = {
       documents: {
         Row: {
           created_at: string | null
+          created_by: string | null
           id: string
           owner_id: string | null
           team_lead_id: string | null
@@ -234,6 +273,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           id?: string
           owner_id?: string | null
           team_lead_id?: string | null
@@ -243,6 +283,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           id?: string
           owner_id?: string | null
           team_lead_id?: string | null
@@ -538,6 +579,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_section: { Args: { section_id: string }; Returns: boolean }
+      can_approve_document: {
+        Args: { doc_id: string; uid: string }
+        Returns: boolean
+      }
+      can_write_document: {
+        Args: { doc_id: string; uid: string }
+        Returns: boolean
+      }
       check_team_lead: {
         Args: { doc_id: string; user_id: string }
         Returns: boolean
@@ -557,6 +607,10 @@ export type Database = {
           section_title: string
           title: string
         }[]
+      }
+      has_document_access: {
+        Args: { doc_id: string; uid: string }
+        Returns: boolean
       }
       search_documents: {
         Args: { search_term: string }
