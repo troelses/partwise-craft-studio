@@ -21,6 +21,17 @@ const functionDeclarations = [
     parameters: { type: "object", properties: { search_term: { type: "string" } }, required: ["search_term"] },
   },
   {
+    name: "find_documents_by_title",
+    description:
+      "Find documents by their TITLE, case-insensitively. Use this FIRST whenever the user refers to a document by name (e.g. 'for urologi', 'the Nefrologi document'), because a document's title word may not appear in its body text.",
+    parameters: {
+      type: "object",
+      properties: { search_term: { type: "string" } },
+      required: ["search_term"],
+    },
+  },
+
+  {
     name: "list_documents",
     description: "List the documents (id + title) the user can access.",
     parameters: { type: "object", properties: {} },
@@ -42,9 +53,13 @@ const systemInstruction = {
         "descriptions, using ONLY the provided tools. Pick the right tool: counting " +
         "questions -> count_documents_containing; 'which documents mention X' -> " +
         "search_documents; comparing or reading specific documents -> get_document_text " +
-        "(find ids via search_documents or list_documents first). Base every factual " +
+        "(find ids via search_documents or list_documents first). When the user refers to a " +
+        "document by name or title (e.g. \"for urologi\"), use find_documents_by_title to " +
+        "locate it — do not use search_documents for that, since the title word may not appear " +
+        "in the body text. Base every factual " +
         "claim on tool results, never assumptions. If a search returns nothing, say so. " +
         "Answer in the language the user used.",
+
     },
   ],
 };
@@ -79,6 +94,11 @@ Deno.serve(async (req: Request) => {
         const { data, error } = await db.rpc("search_documents", { search_term });
         return error ? { error: error.message } : { results: data };
       },
+      find_documents_by_title: async ({ search_term }) => {
+        const { data, error } = await db.rpc("find_documents_by_title", { search_term });
+        return error ? { error: error.message } : { results: data };
+      },
+
       list_documents: async () => {
         const { data, error } = await db
           .from("documents")
