@@ -1,11 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { renderRichText } from '@/utils/richTextRenderer';
-import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface DocumentContinuousViewProps {
   document: Document;
@@ -33,7 +29,6 @@ interface DocumentSectionWithTemplate {
 const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ document }) => {
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDocumentSections();
@@ -119,21 +114,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
     }
   };
 
-  const handleEditSection = (sectionId: string) => {
-    // Store current scroll position before navigating
-    const currentScrollY = window.scrollY;
-    sessionStorage.setItem(`scroll-position-${document.id}`, currentScrollY.toString());
-    
-    // Navigate to edit mode with section focus
-    navigate(`/documents/${document.id}`, { 
-      state: { 
-        viewMode: 'edit',
-        focusSection: sectionId,
-        preserveScroll: true
-      } 
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto animate-pulse space-y-4">
@@ -167,15 +147,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEditSection(section.id)}
-                className="flex items-center ml-4"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
             </div>
             
             <div className="prose max-w-none">
