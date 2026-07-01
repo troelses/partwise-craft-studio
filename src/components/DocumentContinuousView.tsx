@@ -114,7 +114,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
     }
   };
 
-
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto animate-pulse space-y-4">
