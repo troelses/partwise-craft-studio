@@ -7,6 +7,7 @@ import DocumentContinuousView from '@/components/DocumentContinuousView';
 import TeamLeadApproval from '@/components/TeamLeadApproval';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
+import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, Trash2, Edit, Eye, Download, Shield } from 'lucide-react';
@@ -26,7 +27,8 @@ const DocumentView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve'>('view');
-  const [isTeamLead, setIsTeamLead] = useState(false);
+  const [permission, setPermission] = useState<'view' | 'write' | 'approve' | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   // Check if we should start in edit mode with a focused section
@@ -63,9 +65,10 @@ const DocumentView = () => {
         if (doc) {
           setDocument(doc);
           
-          // Check if current user is team lead for this document
-          const teamLeadStatus = await documentService.isTeamLead(id);
-          setIsTeamLead(teamLeadStatus);
+          // Determine the current user's permission level on this document
+          const level = await documentService.getMyPermission(id);
+          setPermission(level);
+          setIsAdmin(await authService.isAdmin());
         } else {
           toast({
             title: "Error",
@@ -87,6 +90,18 @@ const DocumentView = () => {
     
     fetchDocument();
   }, [id, navigate, toast]);
+
+  // If the user deep-linked into a mode they lack rights for, drop to view.
+  useEffect(() => {
+    if (permission === null) return; // still loading
+    const allowEdit = permission === 'write' || permission === 'approve';
+    const allowApprove = permission === 'approve';
+    setViewMode((m) => {
+      if (m === 'edit' && !allowEdit) return 'view';
+      if (m === 'approve' && !allowApprove) return 'view';
+      return m;
+    });
+  }, [permission]);
 
   const handleUpdateDocument = (updatedDoc: Document) => {
     setDocument(updatedDoc);
@@ -139,6 +154,10 @@ const DocumentView = () => {
     }
   };
 
+  const canEdit = permission === 'write' || permission === 'approve';
+  const canApprove = permission === 'approve';
+  const canDelete = isAdmin;
+
   return (
     <Layout>
       <div className="mb-6">
@@ -185,16 +204,18 @@ const DocumentView = () => {
                   <Eye className="h-4 w-4 mr-1" />
                   View
                 </Button>
-                <Button
-                  variant={viewMode === 'edit' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('edit')}
-                  className="flex items-center"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                {isTeamLead && (
+                {canEdit && (
+                  <Button
+                    variant={viewMode === 'edit' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('edit')}
+                    className="flex items-center"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
                   <Button
                     variant={viewMode === 'approve' ? 'default' : 'ghost'}
                     size="sm"
@@ -207,16 +228,18 @@ const DocumentView = () => {
                 )}
               </div>
               
-              {/* Delete Button */}
-              <Button 
-                variant="outline"
-                onClick={handleDeleteDocument}
-                disabled={isDeleting}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isDeleting ? 'Deleting...' : 'Delete Document'}
-              </Button>
+              {/* Delete Button - admins only */}
+              {canDelete && (
+                <Button 
+                  variant="outline"
+                  onClick={handleDeleteDocument}
+                  disabled={isDeleting}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? 'Deleting...' : 'Delete Document'}
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -232,7 +255,7 @@ const DocumentView = () => {
       ) : document ? (
         <>
           {viewMode === 'view' && <DocumentContinuousView document={document} />}
-          {viewMode === 'edit' && (
+          {viewMode === 'edit' && canEdit && (
             <DocumentEditor 
               document={document} 
               onUpdate={handleUpdateDocument} 
@@ -240,7 +263,7 @@ const DocumentView = () => {
               preserveScroll={location.state?.preserveScroll}
             />
           )}
-          {viewMode === 'approve' && isTeamLead && (
+          {viewMode === 'approve' && canApprove && (
             <TeamLeadApproval 
               documentId={document.id} 
               onApprovalChange={() => {
