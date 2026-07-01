@@ -255,7 +255,7 @@ const DocumentView = () => {
       ) : document ? (
         <>
           {viewMode === 'view' && <DocumentContinuousView document={document} />}
-          {viewMode === 'edit' && (
+          {viewMode === 'edit' && canEdit && (
             <DocumentEditor 
               document={document} 
               onUpdate={handleUpdateDocument} 
@@ -263,7 +263,7 @@ const DocumentView = () => {
               preserveScroll={location.state?.preserveScroll}
             />
           )}
-          {viewMode === 'approve' && isTeamLead && (
+          {viewMode === 'approve' && canApprove && (
             <TeamLeadApproval 
               documentId={document.id} 
               onApprovalChange={() => {
