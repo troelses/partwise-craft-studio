@@ -437,46 +437,41 @@ export const documentService = {
   // Approve a section by moving draft_content to published_content
   approveSection: async (sectionId: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      // Get the current section to access draft_content
-      const { data: section, error: fetchError } = await supabase
-        .from('document_sections')
-        .select('draft_content')
-        .eq('id', sectionId)
-        .maybeSingle();
-
-      if (fetchError || !section) throw fetchError;
-
-      // Move draft_content to published_content and mark as approved
-      const { error } = await supabase
-        .from('document_sections')
-        .update({
-          published_content: section.draft_content,
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-          is_approved: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sectionId);
-
+      const { data, error } = await supabase.rpc('approve_section', {
+        section_id: sectionId,
+      });
       if (error) throw error;
-      return true;
+      return data === true;
     } catch (error) {
       console.error('Error approving section:', error);
       return false;
     }
   },
 
-  // Assign team lead to document
-  assignTeamLead: async (documentId: string, userId: string): Promise<boolean> => {
+  assignTeamLead: async (
+    documentId: string,
+    userId: string | null
+  ): Promise<boolean> => {
     try {
+      const { data: doc } = await supabase
+        .from('documents')
+        .select('team_lead_id')
+        .eq('id', documentId)
+        .maybeSingle();
+      const previous = doc?.team_lead_id ?? null;
+
+      if (previous && previous !== userId) {
+        await documentService.revokeAccess(documentId, previous);
+      }
+      if (userId) {
+        const ok = await documentService.grantAccess(documentId, userId, 'approve');
+        if (!ok) return false;
+      }
+
       const { error } = await supabase
         .from('documents')
         .update({ team_lead_id: userId })
         .eq('id', documentId);
-
       if (error) throw error;
       return true;
     } catch (error) {

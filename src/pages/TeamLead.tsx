@@ -29,12 +29,24 @@ const TeamLead = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get documents where current user is team lead
-      const { data: docs, error: docsError } = await supabase
-        .from('documents')
-        .select('id, title, created_at, updated_at')
-        .eq('team_lead_id', user.id)
-        .order('updated_at', { ascending: false });
+      // Get documents where the current user has approver access
+      const { data: grants, error: grantsError } = await supabase
+        .from('document_access')
+        .select('document_id')
+        .eq('user_id', user.id)
+        .eq('permission', 'approve');
+
+      if (grantsError) throw grantsError;
+
+      const docIds = (grants ?? []).map(g => g.document_id);
+
+      const { data: docs, error: docsError } = docIds.length
+        ? await supabase
+            .from('documents')
+            .select('id, title, created_at, updated_at')
+            .in('id', docIds)
+            .order('updated_at', { ascending: false })
+        : { data: [], error: null };
 
       if (docsError) throw docsError;
 

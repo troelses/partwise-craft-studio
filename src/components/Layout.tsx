@@ -39,11 +39,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check if user is a team lead for any document
+      // Show the Redaktør tab if the user has approver access to any document
       const { data, error } = await supabase
-        .from('documents')
-        .select('id')
-        .eq('team_lead_id', user.id)
+        .from('document_access')
+        .select('document_id')
+        .eq('user_id', user.id)
+        .eq('permission', 'approve')
         .limit(1);
 
       if (error) {
