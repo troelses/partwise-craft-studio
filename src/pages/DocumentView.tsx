@@ -27,7 +27,8 @@ const DocumentView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve'>('view');
-  const [isTeamLead, setIsTeamLead] = useState(false);
+  const [permission, setPermission] = useState<'view' | 'write' | 'approve' | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   // Check if we should start in edit mode with a focused section
