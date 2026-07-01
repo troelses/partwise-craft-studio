@@ -72,7 +72,7 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
 
   const handleEdit = (documentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    handleView(documentId, e); // For now, edit is the same as view
+    navigate(`/documents/${documentId}`, { state: { viewMode: 'edit' } });
   };
 
   const handleShare = (documentTitle: string, e: React.MouseEvent) => {
