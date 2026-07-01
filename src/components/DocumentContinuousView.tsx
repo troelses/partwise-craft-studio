@@ -164,15 +164,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEditSection(section.id)}
-                className="flex items-center ml-4"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
             </div>
             
             <div className="prose max-w-none">
