@@ -65,9 +65,10 @@ const DocumentView = () => {
         if (doc) {
           setDocument(doc);
           
-          // Check if current user is team lead for this document
-          const teamLeadStatus = await documentService.isTeamLead(id);
-          setIsTeamLead(teamLeadStatus);
+          // Determine the current user's permission level on this document
+          const level = await documentService.getMyPermission(id);
+          setPermission(level);
+          setIsAdmin(await authService.isAdmin());
         } else {
           toast({
             title: "Error",
@@ -89,6 +90,18 @@ const DocumentView = () => {
     
     fetchDocument();
   }, [id, navigate, toast]);
+
+  // If the user deep-linked into a mode they lack rights for, drop to view.
+  useEffect(() => {
+    if (permission === null) return; // still loading
+    const allowEdit = permission === 'write' || permission === 'approve';
+    const allowApprove = permission === 'approve';
+    setViewMode((m) => {
+      if (m === 'edit' && !allowEdit) return 'view';
+      if (m === 'approve' && !allowApprove) return 'view';
+      return m;
+    });
+  }, [permission]);
 
   const handleUpdateDocument = (updatedDoc: Document) => {
     setDocument(updatedDoc);
@@ -140,6 +153,10 @@ const DocumentView = () => {
       });
     }
   };
+
+  const canEdit = permission === 'write' || permission === 'approve';
+  const canApprove = permission === 'approve';
+  const canDelete = isAdmin;
 
   return (
     <Layout>
