@@ -30,7 +30,7 @@ interface DocumentSectionWithTemplate {
 const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ document }) => {
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     fetchDocumentSections();
@@ -116,20 +116,6 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
     }
   };
 
-  const handleEditSection = (sectionId: string) => {
-    // Store current scroll position before navigating
-    const currentScrollY = window.scrollY;
-    sessionStorage.setItem(`scroll-position-${document.id}`, currentScrollY.toString());
-    
-    // Navigate to edit mode with section focus
-    navigate(`/documents/${document.id}`, { 
-      state: { 
-        viewMode: 'edit',
-        focusSection: sectionId,
-        preserveScroll: true
-      } 
-    });
-  };
 
   if (isLoading) {
     return (
