@@ -301,24 +301,110 @@ export const documentService = {
   },
 
   // Check if current user is team lead for a document
-  isTeamLead: async (documentId: string): Promise<boolean> => {
+  // Returns the current user's permission level on a document, or null.
+  // Admins are treated as 'approve' (highest) on every document.
+  getMyPermission: async (
+    documentId: string
+  ): Promise<'view' | 'write' | 'approve' | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      if (!user) return null;
 
-      const { data, error } = await supabase.rpc('check_team_lead', {
-        user_id: user.id,
-        doc_id: documentId
-      });
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (profile?.role === 'admin') return 'approve';
 
+      const { data, error } = await supabase
+        .from('document_access')
+        .select('permission')
+        .eq('document_id', documentId)
+        .eq('user_id', user.id)
+        .maybeSingle();
       if (error) {
-        console.error('Error checking team lead status:', error);
-        return false;
+        console.error('Error fetching permission:', error);
+        return null;
       }
-
-      return data || false;
+      return (data?.permission as 'view' | 'write' | 'approve' | undefined) ?? null;
     } catch (error) {
-      console.error('Error checking team lead status:', error);
+      console.error('Error fetching permission:', error);
+      return null;
+    }
+  },
+
+  // Kept as a wrapper so existing call sites work until Stage 3.
+  isTeamLead: async (documentId: string): Promise<boolean> => {
+    return (await documentService.getMyPermission(documentId)) === 'approve';
+  },
+
+  // List everyone with access to a document (with emails) — for the Stage 4 UI.
+  getDocumentAccess: async (documentId: string) => {
+    try {
+      const { data: grants, error } = await supabase
+        .from('document_access')
+        .select('user_id, permission, created_at')
+        .eq('document_id', documentId);
+      if (error) throw error;
+
+      const userIds = (grants ?? []).map(g => g.user_id);
+      let profiles: { user_id: string; email: string }[] = [];
+      if (userIds.length) {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('user_id, email')
+          .in('user_id', userIds);
+        profiles = data ?? [];
+      }
+      const emailMap = new Map(profiles.map(p => [p.user_id, p.email]));
+      return (grants ?? []).map(g => ({ ...g, email: emailMap.get(g.user_id) ?? null }));
+    } catch (error) {
+      console.error('Error fetching document access:', error);
+      return [];
+    }
+  },
+
+  // Grant or change a user's access level (RLS enforces who may do this;
+  // only admins may grant 'approve').
+  grantAccess: async (
+    documentId: string,
+    userId: string,
+    permission: 'view' | 'write' | 'approve'
+  ): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('document_access')
+        .upsert(
+          {
+            document_id: documentId,
+            user_id: userId,
+            permission,
+            granted_by: user?.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'document_id,user_id' }
+        );
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error granting access:', error);
+      return false;
+    }
+  },
+
+  revokeAccess: async (documentId: string, userId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('document_access')
+        .delete()
+        .eq('document_id', documentId)
+        .eq('user_id', userId);
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error revoking access:', error);
       return false;
     }
   },
@@ -351,46 +437,41 @@ export const documentService = {
   // Approve a section by moving draft_content to published_content
   approveSection: async (sectionId: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      // Get the current section to access draft_content
-      const { data: section, error: fetchError } = await supabase
-        .from('document_sections')
-        .select('draft_content')
-        .eq('id', sectionId)
-        .maybeSingle();
-
-      if (fetchError || !section) throw fetchError;
-
-      // Move draft_content to published_content and mark as approved
-      const { error } = await supabase
-        .from('document_sections')
-        .update({
-          published_content: section.draft_content,
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-          is_approved: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sectionId);
-
+      const { data, error } = await supabase.rpc('approve_section', {
+        section_id: sectionId,
+      });
       if (error) throw error;
-      return true;
+      return data === true;
     } catch (error) {
       console.error('Error approving section:', error);
       return false;
     }
   },
 
-  // Assign team lead to document
-  assignTeamLead: async (documentId: string, userId: string): Promise<boolean> => {
+  assignTeamLead: async (
+    documentId: string,
+    userId: string | null
+  ): Promise<boolean> => {
     try {
+      const { data: doc } = await supabase
+        .from('documents')
+        .select('team_lead_id')
+        .eq('id', documentId)
+        .maybeSingle();
+      const previous = doc?.team_lead_id ?? null;
+
+      if (previous && previous !== userId) {
+        await documentService.revokeAccess(documentId, previous);
+      }
+      if (userId) {
+        const ok = await documentService.grantAccess(documentId, userId, 'approve');
+        if (!ok) return false;
+      }
+
       const { error } = await supabase
         .from('documents')
         .update({ team_lead_id: userId })
         .eq('id', documentId);
-
       if (error) throw error;
       return true;
     } catch (error) {
