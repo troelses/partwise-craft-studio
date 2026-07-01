@@ -204,16 +204,18 @@ const DocumentView = () => {
                   <Eye className="h-4 w-4 mr-1" />
                   View
                 </Button>
-                <Button
-                  variant={viewMode === 'edit' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('edit')}
-                  className="flex items-center"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                {isTeamLead && (
+                {canEdit && (
+                  <Button
+                    variant={viewMode === 'edit' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('edit')}
+                    className="flex items-center"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
                   <Button
                     variant={viewMode === 'approve' ? 'default' : 'ghost'}
                     size="sm"
@@ -226,16 +228,18 @@ const DocumentView = () => {
                 )}
               </div>
               
-              {/* Delete Button */}
-              <Button 
-                variant="outline"
-                onClick={handleDeleteDocument}
-                disabled={isDeleting}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isDeleting ? 'Deleting...' : 'Delete Document'}
-              </Button>
+              {/* Delete Button - admins only */}
+              {canDelete && (
+                <Button 
+                  variant="outline"
+                  onClick={handleDeleteDocument}
+                  disabled={isDeleting}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? 'Deleting...' : 'Delete Document'}
+                </Button>
+              )}
             </div>
           )}
         </div>
