@@ -7,6 +7,7 @@ import DocumentContinuousView from '@/components/DocumentContinuousView';
 import TeamLeadApproval from '@/components/TeamLeadApproval';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
+import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, Trash2, Edit, Eye, Download, Shield } from 'lucide-react';
