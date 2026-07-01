@@ -29,7 +29,6 @@ interface DocumentSectionWithTemplate {
 const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ document }) => {
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
 
   useEffect(() => {
     fetchDocumentSections();
