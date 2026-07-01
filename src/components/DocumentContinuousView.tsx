@@ -3,9 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { renderRichText } from '@/utils/richTextRenderer';
-import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface DocumentContinuousViewProps {
   document: Document;
