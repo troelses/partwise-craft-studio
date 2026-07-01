@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Specialty } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Eye, Pencil, Share } from 'lucide-react';
+import { Eye, Pencil, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -117,11 +117,9 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
             {!isLoading && documents.map((document) => (
               <TableRow 
                 key={document.id}
-                className={`cursor-pointer ${activeSpecialty === document.title ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                onClick={() => onSpecialtyChange(document.title)}
+                className="hover:bg-gray-50"
               >
                 <TableCell className="flex items-center gap-2">
-                  {activeSpecialty === document.title && <Check className="h-4 w-4 text-blue-600" />}
                   <span>{document.title}</span>
                 </TableCell>
                 <TableCell className="text-right">
