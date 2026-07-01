@@ -600,6 +600,13 @@ export type Database = {
         Args: { search_term: string }
         Returns: number
       }
+      find_documents_by_title: {
+        Args: { search_term: string }
+        Returns: {
+          document_id: string
+          title: string
+        }[]
+      }
       get_document_text: {
         Args: { doc_id: string }
         Returns: {
