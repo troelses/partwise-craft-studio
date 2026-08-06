@@ -3,25 +3,22 @@ import { z } from "zod";
 import { supabaseForUser } from "../supabase";
 
 export default defineTool({
-  name: "list_documents",
-  title: "List documents",
-  description: "List the documents (id and title) the signed-in user has access to.",
-  inputSchema: { limit: z.number().int().min(1).max(200).optional().describe("Max documents to return.") },
+  name: "find_documents_by_title",
+  title: "Find documents by title",
+  description:
+    "Find documents by their title, case-insensitively. Use this when the user refers to a document by name (e.g. 'urologi').",
+  inputSchema: { search_term: z.string().trim().min(1).describe("Part of the document title.") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit }, ctx) => {
+  handler: async ({ search_term }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    const { data, error } = await supabase
-      .from("documents")
-      .select("id, title, document_type, created_at")
-      .order("created_at", { ascending: false })
-      .limit(limit ?? 100);
+    const { data, error } = await supabase.rpc("find_documents_by_title", { search_term });
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
       content: [{ type: "text", text: JSON.stringify(data) }],
-      structuredContent: { documents: data ?? [] },
+      structuredContent: { results: data ?? [] },
     };
   },
 });
