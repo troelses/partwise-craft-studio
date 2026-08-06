@@ -20,16 +20,21 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Where to send the user after sign-in (used by the OAuth consent flow).
+  const nextParam = new URLSearchParams(window.location.search).get('next');
+  const redirectTarget =
+    nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/';
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Redirect authenticated users to main page
+
+        // Redirect authenticated users onward
         if (session?.user) {
-          navigate('/');
+          navigate(redirectTarget);
         }
       }
     );
@@ -40,12 +45,13 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/');
+        navigate(redirectTarget);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirectTarget]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
