@@ -15,7 +15,9 @@ import TeamLead from "./pages/TeamLead";
 import AskAI from "./pages/AskAI";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import OAuthConsent from "./pages/OAuthConsent";
 import AuthGuard from "./components/AuthGuard";
+
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
           <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
           <Route path="/specialebeskrivelser" element={<AuthGuard><Specialebeskrivelser /></AuthGuard>} />
           <Route path="/maalbeskrivelser" element={<AuthGuard><Maalbeskrivelser /></AuthGuard>} />
