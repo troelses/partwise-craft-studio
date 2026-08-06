@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://asmgutvwjlwqixxaqcrg.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "specialer",
+      "version": "0.1.0",
+      "title": "specialer"
+    },
+    "tools": [
+      {
+        "name": "list_documents",
+        "title": "List documents",
+        "description": "List the documents (id and title) the signed-in user has access to.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max documents to return."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_documents_by_title",
+        "title": "Find documents by title",
+        "description": "Find documents by their title, case-insensitively. Use this when the user refers to a document by name (e.g. 'urologi').",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search_term": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Part of the document title."
+            }
+          },
+          "required": [
+            "search_term"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_documents",
+        "title": "Search documents",
+        "description": "Full-text search the approved document text for a word or phrase. Returns matching document ids, titles and match counts.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search_term": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Word or phrase to search for."
+            }
+          },
+          "required": [
+            "search_term"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "count_documents_containing",
+        "title": "Count documents containing a term",
+        "description": "Count how many accessible documents contain a word or phrase.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search_term": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Word or phrase to count."
+            }
+          },
+          "required": [
+            "search_term"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_document_text",
+        "title": "Get document text",
+        "description": "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "doc_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The document id."
+            }
+          },
+          "required": [
+            "doc_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
