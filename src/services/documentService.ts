@@ -1,9 +1,6 @@
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
-
-// The single template used for all documents in this application.
-// If multiple templates are introduced, this should come from the document record.
-const DEFAULT_TEMPLATE_ID = DEFAULT_TEMPLATE_ID;
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template';
 
 export const documentService = {
   // Get all documents

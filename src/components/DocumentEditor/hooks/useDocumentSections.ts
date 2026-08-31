@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template';
 
 interface TemplateSection {
   id: string;
@@ -9,6 +10,7 @@ interface TemplateSection {
   position: number;
   level: number;
   description?: string;
+  section_key?: string | null;
 }
 
 interface DocumentSectionWithTemplate {
@@ -31,12 +33,12 @@ export const useDocumentSections = (documentId: string) => {
   const fetchTemplateAndDocumentSections = async () => {
     try {
       setIsLoading(true);
-      
+
       // Fetch template sections with description
       const { data: templateData, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .eq('template_id', DEFAULT_TEMPLATE_ID)
         .order('position');
 
       if (templateError) {
@@ -67,7 +69,7 @@ export const useDocumentSections = (documentId: string) => {
       // Combine template sections with document sections
       const combinedSections: DocumentSectionWithTemplate[] = templateSections.map(templateSection => {
         const existingSection = existingSectionsMap.get(templateSection.id);
-        
+
         if (existingSection) {
           return {
             id: existingSection.id,
@@ -77,7 +79,14 @@ export const useDocumentSections = (documentId: string) => {
             documentId: documentId,
             createdAt: existingSection.updated_at || new Date().toISOString(),
             updatedAt: existingSection.updated_at || new Date().toISOString(),
-            templateSection
+            templateSection: {
+              id: templateSection.id,
+              name: templateSection.name,
+              position: templateSection.position,
+              level: templateSection.level,
+              description: templateSection.description,
+              section_key: templateSection.section_key ?? null,
+            }
           };
         } else {
           return {
@@ -88,7 +97,14 @@ export const useDocumentSections = (documentId: string) => {
             documentId: documentId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            templateSection
+            templateSection: {
+              id: templateSection.id,
+              name: templateSection.name,
+              position: templateSection.position,
+              level: templateSection.level,
+              description: templateSection.description,
+              section_key: templateSection.section_key ?? null,
+            }
           };
         }
       });
