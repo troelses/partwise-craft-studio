@@ -34,11 +34,25 @@ export const useDocumentSections = (documentId: string) => {
     try {
       setIsLoading(true);
 
+      // Resolve the template from the document itself, so documents created with
+      // an older template keep rendering their original section structure.
+      const { data: documentData, error: documentError } = await supabase
+        .from('documents')
+        .select('template_id')
+        .eq('id', documentId)
+        .single();
+
+      if (documentError) {
+        throw documentError;
+      }
+
+      const templateId = documentData?.template_id || DEFAULT_TEMPLATE_ID;
+
       // Fetch template sections with description
       const { data: templateData, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', DEFAULT_TEMPLATE_ID)
+        .eq('template_id', templateId)
         .order('position');
 
       if (templateError) {

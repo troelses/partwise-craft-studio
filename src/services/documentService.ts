@@ -85,11 +85,13 @@ export const documentService = {
       if (docError) throw docError;
       if (!docData) return undefined;
 
-      // First, get the template sections to define the structure
+      // First, get the template sections to define the structure. Resolve against
+      // the document's own template so documents created with an older template
+      // keep rendering their original section structure.
       const { data: templateSections, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', DEFAULT_TEMPLATE_ID)
+        .eq('template_id', docData.template_id || DEFAULT_TEMPLATE_ID)
         .order('position');
 
       if (templateError) throw templateError;
