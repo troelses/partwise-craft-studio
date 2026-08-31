@@ -226,29 +226,38 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_current: boolean
           owner_id: string | null
           team_lead_id: string | null
           template_id: string | null
           title: string
           updated_at: string | null
+          version_group_id: string
+          version_number: number
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_current?: boolean
           owner_id?: string | null
           team_lead_id?: string | null
           template_id?: string | null
           title: string
           updated_at?: string | null
+          version_group_id?: string
+          version_number?: number
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_current?: boolean
           owner_id?: string | null
           team_lead_id?: string | null
           template_id?: string | null
           title?: string
           updated_at?: string | null
+          version_group_id?: string
+          version_number?: number
         }
         Relationships: [
           {
@@ -395,6 +404,7 @@ export type Database = {
           level: number
           name: string
           position: number
+          section_key: string | null
           template_id: string | null
         }
         Insert: {
@@ -404,6 +414,7 @@ export type Database = {
           level?: number
           name: string
           position: number
+          section_key?: string | null
           template_id?: string | null
         }
         Update: {
@@ -413,6 +424,7 @@ export type Database = {
           level?: number
           name?: string
           position?: number
+          section_key?: string | null
           template_id?: string | null
         }
         Relationships: [
@@ -538,6 +550,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_document_versions: {
+        Args: { p_user_id: string; p_version_group_id: string }
+        Returns: boolean
+      }
       check_team_lead: {
         Args: { doc_id: string; user_id: string }
         Returns: boolean
@@ -545,6 +561,18 @@ export type Database = {
       check_user_role: {
         Args: { required_role: string; user_id: string }
         Returns: boolean
+      }
+      create_document_version: {
+        Args: {
+          p_copy_content?: boolean
+          p_source_document_id: string
+          p_template_id: string
+        }
+        Returns: string
+      }
+      set_current_document_version: {
+        Args: { p_document_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -1,5 +1,12 @@
 
 import { DocumentSection } from '@/types/document';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Template {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 export const SPECIALEBESKRIVELSER_TEMPLATE_SECTIONS = [
   { title: "1. Kort overordnet beskrivelse af specialet", content: "", order: 10 },
@@ -12,6 +19,25 @@ export const SPECIALEBESKRIVELSER_TEMPLATE_SECTIONS = [
 ];
 
 export const templateService = {
+  // All templates available to build a document version on.
+  getTemplates: async (): Promise<Template[]> => {
+    const { data, error } = await supabase
+      .from('templates')
+      .select('id, name, description')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching templates:', error);
+      throw error;
+    }
+
+    return (data || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      description: t.description ?? null,
+    }));
+  },
+
   // Get template sections for a document category
   getTemplateSections: (category: string): Omit<DocumentSection, 'id' | 'documentId' | 'createdAt' | 'updatedAt'>[] => {
     if (category === 'Specialebeskrivelser') {

@@ -5,11 +5,12 @@ import Layout from '@/components/Layout';
 import DocumentEditor from '@/components/DocumentEditor';
 import DocumentContinuousView from '@/components/DocumentContinuousView';
 import TeamLeadApproval from '@/components/TeamLeadApproval';
+import DocumentVersions from '@/components/DocumentVersions';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Trash2, Edit, Eye, Download, Shield } from 'lucide-react';
+import { ChevronLeft, Trash2, Edit, Eye, Download, Shield, GitBranch } from 'lucide-react';
 import { exportToWord, exportToPDF } from '@/utils/documentExporter';
 import {
   DropdownMenu,
@@ -25,8 +26,9 @@ const DocumentView = () => {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve'>('view');
+  const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve' | 'versions'>('view');
   const [isTeamLead, setIsTeamLead] = useState(false);
+  const [canManageVersions, setCanManageVersions] = useState(false);
   const { toast } = useToast();
 
   // Check if we should start in edit mode with a focused section
@@ -66,6 +68,10 @@ const DocumentView = () => {
           // Check if current user is team lead for this document
           const teamLeadStatus = await documentService.isTeamLead(id);
           setIsTeamLead(teamLeadStatus);
+
+          // Editors, admins and team leads may manage versions
+          const versionAccess = await documentService.canManageVersions(id);
+          setCanManageVersions(versionAccess);
         } else {
           toast({
             title: "Error",
@@ -205,6 +211,15 @@ const DocumentView = () => {
                     Approve
                   </Button>
                 )}
+                <Button
+                  variant={viewMode === 'versions' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('versions')}
+                  className="flex items-center"
+                >
+                  <GitBranch className="h-4 w-4 mr-1" />
+                  Versions
+                </Button>
               </div>
               
               {/* Delete Button */}
@@ -241,12 +256,18 @@ const DocumentView = () => {
             />
           )}
           {viewMode === 'approve' && isTeamLead && (
-            <TeamLeadApproval 
-              documentId={document.id} 
+            <TeamLeadApproval
+              documentId={document.id}
               onApprovalChange={() => {
                 // Optionally refresh document data after approval
                 console.log('Section approved, document updated');
-              }} 
+              }}
+            />
+          )}
+          {viewMode === 'versions' && (
+            <DocumentVersions
+              documentId={document.id}
+              canManage={canManageVersions}
             />
           )}
         </>

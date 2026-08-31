@@ -13,6 +13,7 @@ interface Document {
   id: string;
   title: string;
   template_id: string;
+  version_number: number;
   created_at: string;
   updated_at: string;
 }
@@ -38,11 +39,12 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
       try {
         setIsLoading(true);
         
-        // Fetch documents with the specific template ID
+        // List the current version of every document, regardless of which
+        // template that version is built on.
         const { data, error } = await supabase
           .from('documents')
           .select('*')
-          .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+          .eq('is_current', true)
           .order('title');
         
         if (error) {
@@ -123,6 +125,11 @@ const SpecialtyList: React.FC<SpecialtyListProps> = ({
                 <TableCell className="flex items-center gap-2">
                   {activeSpecialty === document.title && <Check className="h-4 w-4 text-blue-600" />}
                   <span>{document.title}</span>
+                  {document.version_number > 1 && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      v{document.version_number}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

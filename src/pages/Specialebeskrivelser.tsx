@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import DocumentList from '@/components/DocumentList';
 import SpecialtyList from '@/components/SpecialtyList';
 import { Document, Specialty } from '@/types/document';
-import { supabase } from '@/integrations/supabase/client';
+import { documentService } from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
 
 const Specialebeskrivelser = () => {
@@ -21,8 +21,11 @@ const Specialebeskrivelser = () => {
   useEffect(() => {
     let filtered = documents;
 
+    // SpecialtyList selects a row by document title, so narrow on the title.
     if (activeSpecialty !== 'All') {
-      filtered = filtered.filter(doc => doc.specialty === activeSpecialty);
+      filtered = filtered.filter(
+        doc => doc.title === activeSpecialty || doc.specialty === activeSpecialty
+      );
     }
 
     setFilteredDocuments(filtered);
@@ -31,34 +34,10 @@ const Specialebeskrivelser = () => {
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
-      
-      const { data, error } = await supabase
-        .from('training_documents')
-        .select('*')
-        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching documents:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch documents from database",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const transformedDocuments: Document[] = (data || []).map(doc => ({
-        id: doc.id.toString(),
-        title: doc.title,
-        description: doc.introduction || '',
-        category: 'Specialebeskrivelser',
-        specialty: doc.specialty,
-        sections: [],
-        createdAt: doc.created_at,
-        updatedAt: doc.updated_at,
-      }));
-
-      setDocuments(transformedDocuments);
+      // Only current versions are listed.
+      const data = await documentService.getDocuments();
+      setDocuments(data);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
