@@ -45,7 +45,17 @@ export default function RichTextEditor({
       TextStyle,
       Color,
     ],
-    content: content ? JSON.parse(content) : '',
+    content: (() => {
+      if (!content) return '';
+
+      try {
+        return JSON.parse(content);
+      } catch {
+        // Content is not valid JSON (e.g. legacy plain text). Start empty
+        // rather than crashing the editor.
+        return '';
+      }
+    })(),
     editorProps: {
       attributes: {
         class: 'focus:outline-none',
