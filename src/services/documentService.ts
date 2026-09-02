@@ -7,6 +7,65 @@ const generateId = (): string => {
   return Math.random().toString(36).substring(2, 9);
 };
 
+/** Shared implementation for the two version permission checks, which differ
+ *  only in which SECURITY DEFINER helper they call. */
+const checkVersionPermission = async (
+  documentId: string,
+  fn: 'can_manage_document_versions' | 'can_publish_document_version'
+): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data: source, error: sourceError } = await supabase
+      .from('documents')
+      .select('version_group_id')
+      .eq('id', documentId)
+      .maybeSingle();
+
+    if (sourceError || !source) return false;
+
+    const { data, error } = await supabase.rpc(fn, {
+      p_user_id: user.id,
+      p_version_group_id: source.version_group_id,
+    });
+
+    if (error) {
+      console.error(`Error checking version permission (${fn}):`, error);
+      return false;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error(`Error checking version permission (${fn}):`, error);
+    return false;
+  }
+};
+
+interface DocumentVersionRow {
+  id: string;
+  title: string;
+  version_group_id: string;
+  version_number: number;
+  is_current: boolean;
+  template_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  templates: { name: string } | { name: string }[] | null;
+}
+
+export interface DocumentVersion {
+  id: string;
+  title: string;
+  versionGroupId: string;
+  versionNumber: number;
+  isCurrent: boolean;
+  templateId: string | null;
+  templateName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const documentService = {
   // Get all documents
   getDocuments: async (category?: string): Promise<Document[]> => {
@@ -303,6 +362,98 @@ export const documentService = {
   deleteSection: async (documentId: string, sectionId: string): Promise<boolean> => {
     // This is a mock implementation for non-template documents
     return true;
+  },
+
+  // --- Versions ---------------------------------------------------------------
+
+  // List every version of the document group that the given document belongs to,
+  // newest version first.
+  getDocumentVersions: async (documentId: string): Promise<DocumentVersion[]> => {
+    try {
+      const { data: source, error: sourceError } = await supabase
+        .from('documents')
+        .select('version_group_id')
+        .eq('id', documentId)
+        .maybeSingle();
+
+      if (sourceError) throw sourceError;
+      if (!source) return [];
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, title, version_group_id, version_number, is_current, template_id, created_at, updated_at, templates ( name )')
+        .eq('version_group_id', source.version_group_id)
+        .order('version_number', { ascending: false });
+
+      if (error) throw error;
+
+      const rows = (data || []) as unknown as DocumentVersionRow[];
+
+      return rows.map(row => {
+        const template = Array.isArray(row.templates) ? row.templates[0] : row.templates;
+
+        return {
+          id: row.id,
+          title: row.title,
+          versionGroupId: row.version_group_id,
+          versionNumber: row.version_number,
+          isCurrent: row.is_current,
+          templateId: row.template_id,
+          templateName: template?.name ?? null,
+          createdAt: row.created_at || '',
+          updatedAt: row.updated_at || '',
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching document versions:', error);
+      throw error;
+    }
+  },
+
+  // Create a new version of a document, optionally on a different template.
+  // The new version is not made current — promote it with setCurrentVersion.
+  // Returns the new version's document id.
+  createDocumentVersion: async (
+    sourceDocumentId: string,
+    templateId: string,
+    copyContent: boolean = true
+  ): Promise<string> => {
+    const { data, error } = await supabase.rpc('create_document_version', {
+      p_source_document_id: sourceDocumentId,
+      p_template_id: templateId,
+      p_copy_content: copyContent,
+    });
+
+    if (error) {
+      console.error('Error creating document version:', error);
+      throw error;
+    }
+
+    return data as string;
+  },
+
+  // Promote a version to be the current one for its group.
+  setCurrentVersion: async (documentId: string): Promise<void> => {
+    const { error } = await supabase.rpc('set_current_document_version', {
+      p_document_id: documentId,
+    });
+
+    if (error) {
+      console.error('Error setting current version:', error);
+      throw error;
+    }
+  },
+
+  // Whether the current user may create a version of this document's group.
+  // Requires write-level access (document_access), or admin.
+  canManageVersions: async (documentId: string): Promise<boolean> => {
+    return checkVersionPermission(documentId, 'can_manage_document_versions');
+  },
+
+  // Whether the current user may promote a version to current. Promoting
+  // decides what everyone sees by default, so it requires approve-level access.
+  canPublishVersion: async (documentId: string): Promise<boolean> => {
+    return checkVersionPermission(documentId, 'can_publish_document_version');
   },
 
   // Check if current user is team lead for a document

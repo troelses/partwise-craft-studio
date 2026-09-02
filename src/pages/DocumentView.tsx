@@ -5,12 +5,13 @@ import Layout from '@/components/Layout';
 import DocumentEditor from '@/components/DocumentEditor';
 import DocumentContinuousView from '@/components/DocumentContinuousView';
 import TeamLeadApproval from '@/components/TeamLeadApproval';
+import DocumentVersions from '@/components/DocumentVersions';
 import { Document } from '@/types/document';
 import { documentService } from '@/services/documentService';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Trash2, Edit, Eye, Download, Shield } from 'lucide-react';
+import { ChevronLeft, Trash2, Edit, Eye, Download, Shield, GitBranch } from 'lucide-react';
 import { exportToWord, exportToPDF } from '@/utils/documentExporter';
 import {
   DropdownMenu,
@@ -26,7 +27,7 @@ const DocumentView = () => {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve'>('view');
+  const [viewMode, setViewMode] = useState<'view' | 'edit' | 'approve' | 'versions'>('view');
   const [permission, setPermission] = useState<'view' | 'write' | 'approve' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
@@ -226,6 +227,15 @@ const DocumentView = () => {
                     Approve
                   </Button>
                 )}
+                <Button
+                  variant={viewMode === 'versions' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('versions')}
+                  className="flex items-center"
+                >
+                  <GitBranch className="h-4 w-4 mr-1" />
+                  Versions
+                </Button>
               </div>
               
               {/* Delete Button - admins only */}
@@ -270,6 +280,13 @@ const DocumentView = () => {
                 // Optionally refresh document data after approval
                 console.log('Section approved, document updated');
               }} 
+            />
+          )}
+          {viewMode === 'versions' && (
+            <DocumentVersions
+              documentId={document.id}
+              canCreate={canEdit}
+              canPublish={canApprove}
             />
           )}
         </>
