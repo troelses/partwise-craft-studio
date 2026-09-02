@@ -7,6 +7,65 @@ const generateId = (): string => {
   return Math.random().toString(36).substring(2, 9);
 };
 
+/** Shared implementation for the two version permission checks, which differ
+ *  only in which SECURITY DEFINER helper they call. */
+const checkVersionPermission = async (
+  documentId: string,
+  fn: 'can_manage_document_versions' | 'can_publish_document_version'
+): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data: source, error: sourceError } = await supabase
+      .from('documents')
+      .select('version_group_id')
+      .eq('id', documentId)
+      .maybeSingle();
+
+    if (sourceError || !source) return false;
+
+    const { data, error } = await supabase.rpc(fn, {
+      p_user_id: user.id,
+      p_version_group_id: source.version_group_id,
+    });
+
+    if (error) {
+      console.error(`Error checking version permission (${fn}):`, error);
+      return false;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error(`Error checking version permission (${fn}):`, error);
+    return false;
+  }
+};
+
+interface DocumentVersionRow {
+  id: string;
+  title: string;
+  version_group_id: string;
+  version_number: number;
+  is_current: boolean;
+  template_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  templates: { name: string } | { name: string }[] | null;
+}
+
+export interface DocumentVersion {
+  id: string;
+  title: string;
+  versionGroupId: string;
+  versionNumber: number;
+  isCurrent: boolean;
+  templateId: string | null;
+  templateName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const documentService = {
   // Get all documents
   getDocuments: async (category?: string): Promise<Document[]> => {
