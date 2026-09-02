@@ -10,6 +10,7 @@ prompts assume earlier ones landed.
 | 3 | `03-kerneopgaver.md` | Dynamic kerneopgaver items with five fixed sub-sections |
 | 4 | `04-document-versions-ui.md` | Versions tab: create a version on a chosen template, promote one to current |
 | 5 | `05-richtext-fixes.md` | Two standalone bug fixes in the rich-text layer |
+| 6 | `06-supabase-types.md` | Regenerate the Supabase types (three routes, no CLI needed) |
 
 ## Apply the SQL first
 
@@ -24,11 +25,9 @@ record what you applied with `supabase/checks/sync-migration-ledger.sql`.
 
 ## Regenerate types
 
-After the SQL is applied, regenerate the Supabase TypeScript types. The new
-columns (`documents.version_group_id`, `version_number`, `is_current`,
-`template_sections.section_key`), the `kerneopgaver` / `kerneopgave_sections`
-tables and the new RPCs all need to be present or the code below will not
-typecheck cleanly.
+After the SQL is applied, regenerate the Supabase TypeScript types — see
+`06-supabase-types.md`, which covers three ways to do it without the Supabase
+CLI. Do this before or alongside prompt 4.
 
 **Guardrails — apply to every prompt in this folder:**
 
