@@ -19,6 +19,41 @@ interface DocumentVersionRow {
   templates: { name: string } | { name: string }[] | null;
 }
 
+/** Shared implementation for the two version permission checks, which differ
+ *  only in which SECURITY DEFINER helper they call. */
+const checkVersionPermission = async (
+  documentId: string,
+  fn: 'can_manage_document_versions' | 'can_publish_document_version'
+): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data: source, error: sourceError } = await supabase
+      .from('documents')
+      .select('version_group_id')
+      .eq('id', documentId)
+      .maybeSingle();
+
+    if (sourceError || !source) return false;
+
+    const { data, error } = await supabase.rpc(fn, {
+      p_user_id: user.id,
+      p_version_group_id: source.version_group_id,
+    });
+
+    if (error) {
+      console.error(`Error checking version permission (${fn}):`, error);
+      return false;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error(`Error checking version permission (${fn}):`, error);
+    return false;
+  }
+};
+
 export interface DocumentVersion {
   id: string;
   title: string;
@@ -410,36 +445,16 @@ export const documentService = {
     }
   },
 
-  // Whether the current user may create versions / change the current version
-  // for the group the given document belongs to.
+  // Whether the current user may create a version of this document's group.
+  // Requires write-level access (document_access), or admin.
   canManageVersions: async (documentId: string): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+    return checkVersionPermission(documentId, 'can_manage_document_versions');
+  },
 
-      const { data: source, error: sourceError } = await supabase
-        .from('documents')
-        .select('version_group_id')
-        .eq('id', documentId)
-        .maybeSingle();
-
-      if (sourceError || !source) return false;
-
-      const { data, error } = await supabase.rpc('can_manage_document_versions', {
-        p_user_id: user.id,
-        p_version_group_id: source.version_group_id,
-      });
-
-      if (error) {
-        console.error('Error checking version permissions:', error);
-        return false;
-      }
-
-      return data === true;
-    } catch (error) {
-      console.error('Error checking version permissions:', error);
-      return false;
-    }
+  // Whether the current user may promote a version to current. Promoting
+  // decides what everyone sees by default, so it requires approve-level access.
+  canPublishVersion: async (documentId: string): Promise<boolean> => {
+    return checkVersionPermission(documentId, 'can_publish_document_version');
   },
 
   // Check if current user is team lead for a document
