@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import DocumentHeader from './DocumentHeader';
 import DocumentSection from './DocumentSection';
+import KerneopgaverSection from './KerneopgaverSection';
+import { KERNEOPGAVER_SECTION_KEY } from '@/constants/template';
 import { useDocumentSections } from './hooks/useDocumentSections';
 import { useSectionEditor } from './hooks/useSectionEditor';
 
@@ -104,15 +106,28 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       <div className="space-y-4">
         {sortedSections.map((section) => (
           <div key={section.id} id={`section-${section.id}`}>
-            <DocumentSection
-              section={section}
-              isEditing={editingSection === section.id}
-              onStartEdit={() => startEditingSection(section.id)}
-              onCancelEdit={cancelEditingSection}
-              onContentChange={(content) => handleSectionChange(section.id, content)}
-              onSave={() => saveSection(section.id)}
-              isSaving={isSaving}
-            />
+            {section.templateSection?.section_key === KERNEOPGAVER_SECTION_KEY ? (
+              <KerneopgaverSection
+                documentId={document.id}
+                overviewContent={section.content}
+                isEditingOverview={editingSection === section.id}
+                onStartEditOverview={() => startEditingSection(section.id)}
+                onCancelEditOverview={cancelEditingSection}
+                onOverviewChange={(content) => handleSectionChange(section.id, content)}
+                onSaveOverview={() => saveSection(section.id)}
+                isSaving={isSaving}
+              />
+            ) : (
+              <DocumentSection
+                section={section}
+                isEditing={editingSection === section.id}
+                onStartEdit={() => startEditingSection(section.id)}
+                onCancelEdit={cancelEditingSection}
+                onContentChange={(content) => handleSectionChange(section.id, content)}
+                onSave={() => saveSection(section.id)}
+                isSaving={isSaving}
+              />
+            )}
           </div>
         ))}
       </div>
