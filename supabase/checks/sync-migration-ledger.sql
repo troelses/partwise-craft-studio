@@ -34,8 +34,9 @@ VALUES
   ('20250630112600'),   -- fix RLS recursion
   ('20250630113000'),   -- fix RLS final, check_user_role
   ('20250701113958'),   -- team leads, check_team_lead
-  ('20260831120000')    -- specialebeskrivelse_310826 template + kerneopgaver
-  -- ('20260901090000') -- document versioning: uncomment once applied
+  ('20260831120000'),   -- specialebeskrivelse_310826 template + kerneopgaver
+  ('20260901090000'),   -- document versioning
+  ('20260902090000')    -- versioning bound to document_access
 ON CONFLICT DO NOTHING;
 
 -- 3. Show the resulting ledger.

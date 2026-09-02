@@ -11,17 +11,17 @@ prompts assume earlier ones landed.
 | 4 | `04-document-versions-ui.md` | Versions tab: create a version on a chosen template, promote one to current |
 | 5 | `05-richtext-fixes.md` | Two standalone bug fixes in the rich-text layer |
 | 6 | `06-supabase-types.md` | Regenerate the Supabase types (three routes, no CLI needed) |
+| 7 | `07-record-migrations.md` | Commit the three applied migrations so the repo records the schema |
+| 8 | `08-schema-checks.md` | Commit the two verification scripts |
 
-## Apply the SQL first
+## Status
 
-Prompts 2–4 need these migrations applied, in this order:
+Prompts 1–6 have been applied, and all three migrations are live on the Supabase
+project (verified: `schema-status.sql` reports `ok` on all 14 rows).
 
-1. `supabase/migrations/20260831120000-update-template-add-kerneopgaver.sql` — **already applied**
-2. `supabase/migrations/20260901090000-document-versioning.sql` — **already applied**
-3. `supabase/migrations/20260902090000-versioning-on-document-access.sql` — **not yet applied**
-
-Verify with `supabase/checks/schema-status.sql` (all rows should read `ok`), then
-record what you applied with `supabase/checks/sync-migration-ledger.sql`.
+Prompts 7 and 8 are bookkeeping — they add the already-applied SQL to the repo so
+version control describes the real schema. They add files only and change no
+running code; **the SQL in them must not be executed again.**
 
 ## Regenerate types
 
