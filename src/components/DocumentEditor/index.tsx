@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import DocumentHeader from './DocumentHeader';
 import DocumentSection from './DocumentSection';
+import KerneopgaverSection from './KerneopgaverSection';
+import { KERNEOPGAVER_SECTION_KEY } from '@/constants/template';
 import { useDocumentSections } from './hooks/useDocumentSections';
 import { useSectionEditor } from './hooks/useSectionEditor';
 
