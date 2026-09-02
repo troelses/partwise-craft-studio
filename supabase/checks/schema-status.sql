@@ -130,5 +130,35 @@ WITH checks(sort_order, item, status) AS (
   UNION ALL
   SELECT 11, 'exactly one current version per document group',
          pg_temp.versioning_data_status('current')
+
+  -- 20260902090000 : versioning bound to document_access ----------------------
+  -- These cannot be inferred from types.ts. A generated types file can name an
+  -- RPC that does not exist in the database, so check the catalog directly.
+  UNION ALL
+  SELECT 12, 'can_publish_document_version exists',
+         CASE WHEN EXISTS (
+           SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = 'can_publish_document_version'
+         ) THEN 'ok' ELSE 'MISSING -> apply 20260902090000' END
+
+  UNION ALL
+  SELECT 13, 'version permissions read document_access',
+         CASE WHEN EXISTS (
+           SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public'
+              AND p.proname = 'can_manage_document_versions'
+              AND p.prosrc LIKE '%document_access%'
+         ) THEN 'ok'
+         ELSE 'STALE -> still keyed to team_lead_id; apply 20260902090000' END
+
+  UNION ALL
+  SELECT 14, 'new versions inherit grants',
+         CASE WHEN EXISTS (
+           SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public'
+              AND p.proname = 'create_document_version'
+              AND p.prosrc LIKE '%document_access%'
+         ) THEN 'ok'
+         ELSE 'STALE -> versions will be invisible to everyone but their creator; apply 20260902090000' END
 )
 SELECT item, status FROM checks ORDER BY sort_order;
