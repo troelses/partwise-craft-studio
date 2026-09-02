@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template';
 
 interface TemplateSection {
   id: string;
@@ -9,6 +10,7 @@ interface TemplateSection {
   position: number;
   level: number;
   description?: string;
+  section_key?: string | null;
 }
 
 interface DocumentSectionWithTemplate {
@@ -31,12 +33,26 @@ export const useDocumentSections = (documentId: string) => {
   const fetchTemplateAndDocumentSections = async () => {
     try {
       setIsLoading(true);
-      
+
+      // Resolve the template from the document itself, so documents created with
+      // an older template keep rendering their original section structure.
+      const { data: documentData, error: documentError } = await supabase
+        .from('documents')
+        .select('template_id')
+        .eq('id', documentId)
+        .single();
+
+      if (documentError) {
+        throw documentError;
+      }
+
+      const templateId = documentData?.template_id || DEFAULT_TEMPLATE_ID;
+
       // Fetch template sections with description
       const { data: templateData, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .eq('template_id', templateId)
         .order('position');
 
       if (templateError) {

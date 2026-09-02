@@ -1,5 +1,6 @@
 import { Document, DocumentSection } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template';
 
 // Generate a simple ID
 const generateId = (): string => {
@@ -29,6 +30,8 @@ export const documentService = {
             )
           )
         `)
+        // Only the current version of each document appears in listings.
+        .eq('is_current', true)
         .order('created_at', { ascending: false });
 
       if (category) {
@@ -89,11 +92,13 @@ export const documentService = {
       if (docError) throw docError;
       if (!docData) return undefined;
 
-      // First, get the template sections to define the structure
+      // First, get the template sections to define the structure. Resolve against
+      // the document's own template so documents created with an older template
+      // keep rendering their original section structure.
       const { data: templateSections, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .eq('template_id', docData.template_id || DEFAULT_TEMPLATE_ID)
         .order('position');
 
       if (templateError) throw templateError;
@@ -153,7 +158,7 @@ export const documentService = {
         .from('documents')
         .insert({
           title: document.title,
-          template_id: '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03',
+          template_id: DEFAULT_TEMPLATE_ID,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
