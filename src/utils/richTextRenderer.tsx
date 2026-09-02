@@ -1,5 +1,16 @@
 import React from 'react';
 
+// Static class names so Tailwind can see them; a template literal built at
+// runtime gets purged from the production stylesheet.
+const headingSizeClass: Record<number, string> = {
+  1: 'text-3xl',
+  2: 'text-2xl',
+  3: 'text-xl',
+  4: 'text-lg',
+  5: 'text-base',
+  6: 'text-sm',
+};
+
 interface TipTapNode {
   type: string;
   content?: TipTapNode[];
@@ -59,7 +70,7 @@ const renderTipTapContent = (
       const level = node.attrs?.level || 1;
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
       return (
-        <Tag key={index} className={`text-${4 - level}xl font-semibold mb-3`}>
+        <Tag key={index} className={`${headingSizeClass[level] ?? 'text-base'} font-semibold mb-3`}>
           {children}
         </Tag>
       );
