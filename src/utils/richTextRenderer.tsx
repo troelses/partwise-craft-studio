@@ -70,7 +70,7 @@ const renderTipTapContent = (
       const level = node.attrs?.level || 1;
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
       return (
-        <Tag key={index} className={`text-${4 - level}xl font-semibold mb-3`}>
+        <Tag key={index} className={`${headingSizeClass[level] ?? 'text-base'} font-semibold mb-3`}>
           {children}
         </Tag>
       );
