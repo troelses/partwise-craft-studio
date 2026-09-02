@@ -13,6 +13,8 @@ prompts assume earlier ones landed.
 | 6 | `06-supabase-types.md` | Regenerate the Supabase types (three routes, no CLI needed) |
 | 7 | `07-record-migrations.md` | Commit the three applied migrations so the repo records the schema |
 | 8 | `08-schema-checks.md` | Commit the two verification scripts |
+| 9 | `09-footnotes-foundation.md` | Footnotes part 1: data model, renderer, link + underline mark fixes |
+| 10 | `10-footnotes-authoring.md` | Footnotes part 2: authoring, links with display text, continuous numbering |
 
 ## Status
 
