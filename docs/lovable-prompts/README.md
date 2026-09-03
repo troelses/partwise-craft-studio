@@ -17,6 +17,8 @@ prompts assume earlier ones landed.
 | 10 | `10-footnotes-authoring.md` | Footnotes part 2: authoring, links with display text, continuous numbering |
 | 11 | `11-export-kerneopgaver-and-footnotes.md` | Export: kerneopgaver included, real Word footnotes, approved/draft variants |
 | 12 | `12-footnotes-in-search-and-ai.md` | Footnote text reaches full-text search and Ask AI, labelled (+ mandatory REINDEX) |
+| 13 | `13-intern-medicin-template.md` | Second template for the Intern medicin specialties; kerneopgave constants extracted |
+| 14 | `14-docx-import-parser.md` | .docx import part 1: the parser (no UI, no database access) |
 
 ## Status
 
