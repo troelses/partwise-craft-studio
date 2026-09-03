@@ -101,11 +101,22 @@ export const newFnId = (): string => {
   return `fn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+/** The parts of a TipTap node this module inspects. Deliberately loose: the
+ *  documents come from the editor and from imported files, so anything not
+ *  recognised is simply walked through. */
+export interface TipTapNodeLike {
+  type?: string;
+  content?: TipTapNodeLike[];
+  text?: string;
+  marks?: Array<{ type?: string; attrs?: Record<string, unknown> }>;
+  attrs?: Record<string, unknown>;
+}
+
 /** Accepts the TipTap doc as either a JSON string or an already-parsed object,
  *  matching how section content is passed around the app. Never throws. */
-export const parseDoc = (content: unknown): any | null => {
+export const parseDoc = (content: unknown): TipTapNodeLike | null => {
   if (!content) return null;
-  if (typeof content === 'object') return content;
+  if (typeof content === 'object') return content as TipTapNodeLike;
   if (typeof content !== 'string') return null;
   try {
     return JSON.parse(content);
@@ -114,7 +125,7 @@ export const parseDoc = (content: unknown): any | null => {
   }
 };
 
-const walk = (node: any, visit: (n: any) => void): void => {
+const walk = (node: TipTapNodeLike, visit: (n: TipTapNodeLike) => void): void => {
   if (!node || typeof node !== 'object') return;
   visit(node);
   const children = Array.isArray(node.content) ? node.content : [];
@@ -169,7 +180,7 @@ const MARK_ORDER: NoteMark[] = ['bold', 'italic', 'underline', 'strike'];
  * convert both ways between the stored run format and a TipTap document.
  * Only inline content survives: a note is a single paragraph of marked text.
  */
-export const noteRunsToTipTapDoc = (note: NoteRun[] | undefined): any => ({
+export const noteRunsToTipTapDoc = (note: NoteRun[] | undefined): TipTapNodeLike => ({
   type: 'doc',
   content: [
     {
@@ -345,8 +356,8 @@ interface TipTapNode {
   type: string;
   content?: TipTapNode[];
   text?: string;
-  marks?: Array<{ type: string; attrs?: Record<string, any> }>;
-  attrs?: Record<string, any>;
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  attrs?: Record<string, unknown>;
 }
 
 const renderTipTapContent = (
@@ -425,7 +436,7 @@ const renderTipTapContent = (
       );
 
     case 'heading': {
-      const level = node.attrs?.level || 1;
+      const level = Math.min(Math.max(Number(node.attrs?.level) || 1, 1), 6);
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
       return (
         <Tag key={index} className={`${headingSizeClass[level] ?? 'text-base'} font-semibold mb-3`}>

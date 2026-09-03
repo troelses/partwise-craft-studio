@@ -15,6 +15,7 @@ prompts assume earlier ones landed.
 | 8 | `08-schema-checks.md` | Commit the two verification scripts |
 | 9 | `09-footnotes-foundation.md` | Footnotes part 1: data model, renderer, link + underline mark fixes |
 | 10 | `10-footnotes-authoring.md` | Footnotes part 2: authoring, links with display text, continuous numbering |
+| 11 | `11-export-kerneopgaver-and-footnotes.md` | Export: kerneopgaver included, real Word footnotes, approved/draft variants |
 
 ## Status
 
