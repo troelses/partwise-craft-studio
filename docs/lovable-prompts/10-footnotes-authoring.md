@@ -197,6 +197,7 @@ strike, and links whose display text differs from the URL.
 ```tsx
 import React, { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import type { Content } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -253,7 +254,7 @@ const FootnoteDialog: React.FC<FootnoteDialogProps> = ({ open, note, onCancel, o
       Underline,
       Link.configure({ openOnClick: false, autolink: false }),
     ],
-    content: noteRunsToTipTapDoc(note),
+    content: noteRunsToTipTapDoc(note) as Content,
     editorProps: {
       attributes: { class: 'focus:outline-none min-h-[80px] p-3' },
     },
@@ -262,7 +263,7 @@ const FootnoteDialog: React.FC<FootnoteDialogProps> = ({ open, note, onCancel, o
   // Reload the body whenever the dialog is opened for a different footnote.
   useEffect(() => {
     if (!editor || !open) return;
-    editor.commands.setContent(noteRunsToTipTapDoc(note), false);
+    editor.commands.setContent(noteRunsToTipTapDoc(note) as Content, false);
     setShowLinkInput(false);
     setLinkUrl('');
   }, [open, note, editor]);

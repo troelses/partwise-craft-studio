@@ -16,6 +16,7 @@ prompts assume earlier ones landed.
 | 9 | `09-footnotes-foundation.md` | Footnotes part 1: data model, renderer, link + underline mark fixes |
 | 10 | `10-footnotes-authoring.md` | Footnotes part 2: authoring, links with display text, continuous numbering |
 | 11 | `11-export-kerneopgaver-and-footnotes.md` | Export: kerneopgaver included, real Word footnotes, approved/draft variants |
+| 12 | `12-footnotes-in-search-and-ai.md` | Footnote text reaches full-text search and Ask AI, labelled (+ mandatory REINDEX) |
 
 ## Status
 
@@ -40,3 +41,11 @@ CLI. Do this before or alongside prompt 4.
 - Do not modify the MCP integration, the `query-documents` edge function, or `document_access` logic.
 - If a "find this" block does not match the file exactly, stop and report it rather than guessing.
 
+
+## Typechecking this repo
+
+`npx tsc --noEmit` checks **nothing** here: the root `tsconfig.json` has
+`files: []` and only project references, so it type-checks an empty program and
+exits 0 regardless. Use `npx tsc -p tsconfig.app.json --noEmit` (and
+`tsconfig.node.json` for the Vite config). `npm run build` does not typecheck
+either — Vite transpiles without checking.

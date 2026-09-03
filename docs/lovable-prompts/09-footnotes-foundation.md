@@ -175,6 +175,9 @@ export const buildNumbering = (contents: unknown[]): Map<string, number> => {
 
 const MARK_ORDER: NoteMark[] = ['bold', 'italic', 'underline', 'strike'];
 
+const isNoteMark = (value: unknown): value is NoteMark =>
+  typeof value === 'string' && (MARK_ORDER as string[]).includes(value);
+
 /**
  * The note body is edited in a small nested TipTap instance, so it has to
  * convert both ways between the stored run format and a TipTap document.
@@ -215,7 +218,7 @@ export const tipTapDocToNoteRuns = (doc: unknown): NoteRun[] => {
       if (mark?.type === 'link') {
         const value = mark.attrs?.href;
         if (typeof value === 'string' && value) href = value;
-      } else if (MARK_ORDER.includes(mark?.type)) {
+      } else if (isNoteMark(mark?.type)) {
         marks.push(mark.type);
       }
     }
