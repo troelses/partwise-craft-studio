@@ -61,7 +61,7 @@ New file, exactly:
  *    the moment the first section containing one was approved — before any
  *    migration had shipped. This format fails closed instead: footnotes are
  *    simply invisible to search until the SQL is deliberately updated to read
- *    `$.**.t` as well.
+ *    them (migration 20260903090000).
  *
  * 2. The visible number is never stored. Numbering is continuous across the
  *    whole document, and sections are independent editors saved independently,

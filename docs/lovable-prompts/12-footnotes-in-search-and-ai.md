@@ -8,7 +8,11 @@ keys are deliberately `t` / `m` / `href` and never `text`, so the live flattener
 footnotes entirely. That was on purpose: it let footnotes ship and be approved
 without silently corrupting search before this migration existed.
 
-This prompt turns that visibility on.
+This prompt turns that visibility on. A section then reads, for example:
+
+```
+Patienten behandles ambulant. [FN: Jf. nyrestensbehandling i Specialeplanen]
+```
 
 **Guardrails:**
 
@@ -26,20 +30,28 @@ This prompt turns that visibility on.
 
 `tiptap_to_text` is `IMMUTABLE` and `document_sections_published_fts_idx` is a
 functional GIN index built over it, so Postgres does **not** re-evaluate existing
-rows when the function definition changes. Without the reindex the index keeps
-values that no longer match the function, and searches return wrong results with
-no error at all.
+rows when the function definition changes, and it does not warn. Without the
+reindex the index keeps values that no longer match the function, and searches
+return wrong results with no error at all.
 
-Demonstrated on PostgreSQL 16 — a term that exists only inside a footnote:
+Measured on PostgreSQL 16 — a term that exists only inside a footnote:
 
 ```
 searching via the stale index (no reindex):   0 rows
 after REINDEX:                                1 row
 ```
 
-Plain `REINDEX INDEX` (not `CONCURRENTLY`) is used deliberately, because it runs
-inside the transaction a migration is wrapped in. It takes a brief exclusive lock
-on the index while rebuilding.
+Plain `REINDEX INDEX` (not `CONCURRENTLY`, which cannot run in a transaction at
+all) is used deliberately, because it runs inside the transaction a migration is
+wrapped in. Keeping both statements in one transaction is correct by
+construction: nobody can observe the window where the function is new and the
+index is stale.
+
+**It briefly blocks reads, not just writes.** The reindex takes an
+`AccessExclusiveLock` on the index, and the planner takes `AccessShareLock` on
+every index of a table it plans against — so ordinary `SELECT`s on
+`document_sections` wait until the migration commits. At this data volume that is
+a second or two, but run it when the app is quiet rather than mid-session.
 
 ## 1. Create `supabase/migrations/20260903090000-footnotes-in-tiptap-to-text.sql`
 
@@ -70,6 +82,13 @@ on the index while rebuilding.
 --      footnote-only term against the stale index returns 0 rows, and 1 row after
 --      reindexing.
 --
+-- The marker is "[FN: ...]" rather than a Danish word. A label like
+-- "[Fodnoter:" stems to 'fodnot' in the danish text-search config, so every
+-- section containing any footnote would match a search for "fodnote" — a false
+-- positive nobody asked for. Verified: with the Danish label a search for
+-- "fodnote" matched a document that merely HAS a footnote; with "FN" it does
+-- not, and 'fn' collides with nothing in ordinary Danish prose.
+--
 -- Notes are labelled but NOT numbered. This function sees one section's jsonb,
 -- while the application numbers footnotes continuously across the whole
 -- document, and a functional index requires a pure function of a single row — so
@@ -84,37 +103,51 @@ create or replace function public.tiptap_to_text(doc jsonb)
 returns text
 language sql
 immutable
+parallel safe
 as $$
   -- Ordering is explicit everywhere below. string_agg without ORDER BY has no
   -- guaranteed order, and an immutable function backing an index must return
   -- the same string on a fresh evaluation as the one stored in the index.
   with body as (
-    select coalesce(string_agg(t.val, ' ' order by t.ord), '') as txt
+    select coalesce(string_agg(v.t, ' ' order by v.ord), '') as s
     from jsonb_array_elements_text(
            jsonb_path_query_array(doc, 'strict $.**.text')
-         ) with ordinality as t(val, ord)
+         ) with ordinality as v(t, ord)
+  ),
+  note_texts as (
+    -- attrs.note of every node whose type is "footnote", in document order.
+    --
+    -- The type filter matters: a bare `strict $.**.note` would harvest ANY key
+    -- named `note` anywhere in the tree — an image's alt text, or anything a
+    -- future .docx import happens to emit — and render it as a footnote.
+    --
+    -- Only a string `t` is taken. jsonb's ->> stringifies whatever it finds, so
+    -- without the type guard a numeric or object `t` from imported junk would
+    -- inject raw JSON into both the search index and the model's context.
+    select n.ord,
+           btrim((
+             select string_agg(r.run ->> 't', '' order by r.ord)
+             from jsonb_array_elements(n.note) with ordinality as r(run, ord)
+             where jsonb_typeof(r.run -> 't') = 'string'
+           )) as txt
+    from jsonb_array_elements(
+           jsonb_path_query_array(
+             doc, 'strict $.**?(@.type == "footnote").attrs.note')
+         ) with ordinality as n(note, ord)
+    -- Defensive: never let a malformed note abort the function. This backs an
+    -- index, so an exception here would block writes to document_sections, not
+    -- merely break search.
+    where jsonb_typeof(n.note) = 'array'
   ),
   notes as (
-    select coalesce(string_agg(n.note_text, ' | ' order by n.ord), '') as txt
-    from (
-      select a.ord,
-             -- Runs of one note join with no separator: they are consecutive
-             -- fragments of one sentence, split only by formatting or a link.
-             (select coalesce(string_agg(r.val ->> 't', '' order by r.ord), '')
-              from jsonb_array_elements(a.arr) with ordinality as r(val, ord)) as note_text
-      from jsonb_array_elements(
-             jsonb_path_query_array(doc, 'strict $.**.note')
-           ) with ordinality as a(arr, ord)
-      -- Defensive: never let a malformed note abort the function. This backs an
-      -- index, so an error here would block writes to document_sections, not
-      -- merely break search.
-      where jsonb_typeof(a.arr) = 'array'
-    ) n
-    where n.note_text <> ''
+    select coalesce(string_agg(txt, ' | ' order by ord), '') as s
+    from note_texts
+    where txt is not null and txt <> ''
   )
   select case
-           when notes.txt = '' then body.txt
-           else body.txt || ' [Fodnoter: ' || notes.txt || ']'
+           when notes.s = '' then body.s
+           when body.s  = '' then '[FN: ' || notes.s || ']'
+           else body.s || ' [FN: ' || notes.s || ']'
          end
   from body, notes;
 $$;
@@ -136,7 +169,7 @@ Find:
 Replace with:
 
 ```ts
-      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents. Any footnotes appear at the end of a section's body as '[Fodnoter: ... | ...]' — treat those as footnotes, not as running prose.",
+      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
 ```
 
 ## 3. `src/lib/mcp/tools/get-document-text.ts`
@@ -150,20 +183,28 @@ Find:
 Replace with:
 
 ```ts
-    "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Any footnotes appear at the end of a section's body as '[Fodnoter: ... | ...]' — treat those as footnotes, not as running prose.",
+    "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
 ```
 
 ---
 
-## What this does and does not do
+## Design notes
 
-Changing the one function covers all four consumers — the GIN index,
-`count_documents_containing`, `search_documents` and `get_document_text` —
-without touching any of them. A section reads, for example:
+**Why the marker is `[FN:` and not `[Fodnoter:`.** A Danish label stems to
+`fodnot` in the `danish` text-search configuration, so every section containing
+any footnote would match a search for "fodnote" — even one that never mentions
+the word. Measured: with the Danish label a search for "fodnote" returned a
+document that merely *has* a footnote; with `FN` it returns only the document
+whose text actually says it. `fn` collides with nothing in ordinary Danish prose.
 
-```
-Patienten behandles ambulant. [Fodnoter: Jf. nyrestensbehandling i Specialeplanen]
-```
+**Only footnote nodes are read.** The jsonpath is scoped with
+`?(@.type == "footnote")`. An unscoped `$.**.note` would harvest any key named
+`note` anywhere in the tree — an image's alt text, or whatever a future `.docx`
+import emits — and render it as a footnote.
+
+**Only a string `t` is taken.** `->>` stringifies whatever it finds, so without
+the type guard a numeric or object `t` from imported junk would inject raw JSON
+into both the search index and the model's context.
 
 **Notes are labelled but not numbered.** This function sees one section's jsonb,
 while the app numbers footnotes continuously across the whole document, and a
@@ -181,13 +222,17 @@ reads `published_content`, which `approve_section` populates.
 
 **Kerneopgaver stay invisible to Ask AI regardless.** `kerneopgave_sections` has
 only `draft_content` and no `published_content`, so nothing in it is indexed.
-Closing that needs a schema and approval-flow change.
+
+**`parallel safe` is added.** `create or replace function` defaults to PARALLEL
+UNSAFE, which blocked parallel plans for the seq-scan fallback in the two search
+RPCs. The function is pure, so this is correct — but it is a planning change
+riding along with a footnote change, so it is called out rather than buried.
 
 ## After applying
 
 - Run `supabase/checks/schema-status.sql` — all rows should still read `ok`.
 - Approve a section containing a footnote, then use Ask AI to search for a word
-  that appears **only** inside that footnote. It should be found, and the model
-  should present it as a footnote rather than as body text.
+  that appears **only** inside that footnote. It should be found, and presented
+  as a footnote rather than as body text.
 - A word in ordinary body text must still be found — that is the regression to
   watch for.
