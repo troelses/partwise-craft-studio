@@ -19,6 +19,7 @@ prompts assume earlier ones landed.
 | 12 | `12-footnotes-in-search-and-ai.md` | Footnote text reaches full-text search and Ask AI, labelled (+ mandatory REINDEX) |
 | 13 | `13-intern-medicin-template.md` | Second template for the Intern medicin specialties; kerneopgave constants extracted |
 | 14 | `14-docx-import-parser.md` | .docx import part 1: the parser (no UI, no database access) |
+| 15 | `15-docx-import-write.md` | .docx import part 2: import dialog, write path, and the permissions migration it needs |
 
 ## Status
 
