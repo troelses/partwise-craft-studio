@@ -139,3 +139,30 @@
 .ProseMirror p:last-child {
   margin-bottom: 0;
 }
+
+/* Footnotes.
+   Numbering is continuous across the whole document, which a single section's
+   editor cannot know. Inside the editor the marker therefore gets a provisional,
+   section-local number from a CSS counter — it reflows instantly on insert and
+   delete with no JavaScript. The final number is computed in the read view and
+   on export. */
+.ProseMirror {
+  counter-reset: footnote;
+}
+
+.ProseMirror sup.footnote-marker::after {
+  counter-increment: footnote;
+  content: counter(footnote);
+}
+
+.ProseMirror sup.footnote-marker {
+  color: #1d4ed8;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 0.1rem;
+}
+
+.ProseMirror sup.footnote-marker.ProseMirror-selectednode {
+  outline: 2px solid #93c5fd;
+  border-radius: 2px;
+}
