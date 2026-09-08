@@ -189,16 +189,31 @@ export const documentService = {
       const sections: DocumentSection[] = (templateSections || []).map(templateSection => {
         const existingSection = existingSectionsMap.get(templateSection.id);
         
+        // With prefer='published' an unapproved section falls back to its draft,
+        // so an export is never silently missing a section that was never
+        // approved. With prefer='draft' the newest text always wins.
+        const published = existingSection?.published_content
+          ? JSON.stringify(existingSection.published_content)
+          : '';
+        const draft = existingSection?.draft_content
+          ? JSON.stringify(existingSection.draft_content)
+          : '';
+        const legacy = existingSection?.content || '';
+        const content =
+          prefer === 'published'
+            ? (published || draft || legacy)
+            : (draft || legacy);
+
         return {
           id: existingSection?.id || generateId(),
           title: templateSection.name || '',
-          // Use draft_content if available, otherwise fall back to content
-          content: existingSection?.draft_content ? JSON.stringify(existingSection.draft_content) : (existingSection?.content || ''),
+          content,
           order: templateSection.position || 0,
           documentId: id,
           createdAt: existingSection?.created_at || new Date().toISOString(),
           updatedAt: existingSection?.updated_at || new Date().toISOString(),
           templateSectionId: templateSection.id,
+          sectionKey: (templateSection as { section_key?: string | null }).section_key ?? null,
         };
       });
 
