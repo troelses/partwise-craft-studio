@@ -154,7 +154,7 @@ import { z as z5 } from "npm:zod@^3.25.76";
 var get_document_text_default = defineTool5({
   name: "get_document_text",
   title: "Get document text",
-  description: "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first.",
+  description: "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' \u2014 treat those as footnotes, not as running prose.",
   inputSchema: { doc_id: z5.string().uuid().describe("The document id.") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ doc_id }, ctx) => {

@@ -121,7 +121,7 @@
       {
         "name": "get_document_text",
         "title": "Get document text",
-        "description": "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first.",
+        "description": "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
