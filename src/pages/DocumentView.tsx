@@ -12,7 +12,7 @@ import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, Trash2, Edit, Eye, Download, Shield, GitBranch } from 'lucide-react';
-import { exportToWord, exportToPDF } from '@/utils/documentExporter';
+import { exportToWord, exportToPDF, type ExportVariant } from '@/utils/documentExporter';
 import {
   DropdownMenu,
   DropdownMenuContent,
