@@ -131,21 +131,31 @@ const DocumentView = () => {
     }
   };
 
-  const handleExport = async (format: 'word' | 'pdf') => {
-    if (!document) return;
-    
+  const handleExport = async (format: 'word' | 'pdf', variant: ExportVariant) => {
+    if (!document || !id) return;
+
     try {
+      // The document held in state is always the draft, because that is what the
+      // editor works on. Exporting the approved version therefore needs its own
+      // fetch; sections that were never approved fall back to their draft.
+      const target =
+        variant === 'published'
+          ? (await documentService.getDocument(id, { prefer: 'published' })) ?? document
+          : document;
+
+      const label = variant === 'published' ? 'godkendt version' : 'arbejdsudkast';
+
       if (format === 'word') {
-        await exportToWord(document);
+        await exportToWord(target, variant);
         toast({
           title: "Success",
-          description: "Document exported as Word document",
+          description: `Dokumentet blev eksporteret som Word (${label})`,
         });
       } else {
-        await exportToPDF(document);
+        await exportToPDF(target, variant);
         toast({
           title: "Success",
-          description: "Document exported as PDF",
+          description: `Dokumentet blev eksporteret som PDF (${label})`,
         });
       }
     } catch (error) {
