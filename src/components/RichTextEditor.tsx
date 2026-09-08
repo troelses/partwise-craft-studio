@@ -1,14 +1,19 @@
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
+import Link from '@tiptap/extension-link'
 import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import Footnote from '@/extensions/Footnote'
+import FootnoteDialog from '@/components/FootnoteDialog'
+import { FOOTNOTE_NODE, NoteRun } from '@/utils/footnotes'
 import {
   Bold,
   Italic,
@@ -20,6 +25,9 @@ import {
   Redo,
   IndentIncrease,
   IndentDecrease,
+  Link as LinkIcon,
+  Unlink,
+  Superscript,
 } from 'lucide-react'
 
 interface RichTextEditorProps {
@@ -34,6 +42,11 @@ export default function RichTextEditor({
   placeholder = 'Start typing...',
 }: RichTextEditorProps) {
   const isUpdatingFromProps = useRef(false)
+  const [footnoteOpen, setFootnoteOpen] = useState(false)
+  const [editingFnId, setEditingFnId] = useState<string | null>(null)
+  const [editingNote, setEditingNote] = useState<NoteRun[]>([])
+  const [linkUrl, setLinkUrl] = useState('')
+  const [showLinkInput, setShowLinkInput] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -44,6 +57,8 @@ export default function RichTextEditor({
       Underline,
       TextStyle,
       Color,
+      Link.configure({ openOnClick: false, autolink: false }),
+      Footnote,
     ],
     content: (() => {
       if (!content) return '';
@@ -92,6 +107,53 @@ export default function RichTextEditor({
       }
     }
   }, [content, editor])
+
+  // --- Links -----------------------------------------------------------------
+  const startLink = () => {
+    if (!editor) return
+    setLinkUrl(editor.getAttributes('link').href ?? '')
+    setShowLinkInput(true)
+  }
+
+  const applyLink = () => {
+    if (!editor) return
+    const url = linkUrl.trim()
+    if (url) {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    } else {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+    }
+    setShowLinkInput(false)
+    setLinkUrl('')
+  }
+
+  // --- Footnotes ---------------------------------------------------------------
+  // Edits the footnote under the cursor if there is one, otherwise inserts a new
+  // one at the cursor.
+  const openFootnoteDialog = () => {
+    if (!editor) return
+    if (editor.isActive(FOOTNOTE_NODE)) {
+      const attrs = editor.getAttributes(FOOTNOTE_NODE)
+      setEditingFnId(attrs.fnId ?? null)
+      setEditingNote(Array.isArray(attrs.note) ? attrs.note : [])
+    } else {
+      setEditingFnId(null)
+      setEditingNote([])
+    }
+    setFootnoteOpen(true)
+  }
+
+  const saveFootnote = (note: NoteRun[]) => {
+    if (!editor) return
+    if (editingFnId) {
+      editor.chain().focus().updateFootnote(editingFnId, note).run()
+    } else {
+      editor.chain().focus().insertFootnote(note).run()
+    }
+    setFootnoteOpen(false)
+    setEditingFnId(null)
+    setEditingNote([])
+  }
 
   if (!editor) return null
 
@@ -180,6 +242,39 @@ export default function RichTextEditor({
         <Button
           variant="ghost"
           size="sm"
+          onClick={startLink}
+          className={editor.isActive('link') ? 'bg-gray-200' : ''}
+          title="Tilføj link"
+        >
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+
+        {editor.isActive('link') && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().extendMarkRange('link').unsetLink().run()}
+            title="Fjern link"
+          >
+            <Unlink className="h-4 w-4" />
+          </Button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={openFootnoteDialog}
+          className={editor.isActive(FOOTNOTE_NODE) ? 'bg-gray-200' : ''}
+          title="Fodnote"
+        >
+          <Superscript className="h-4 w-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         >
@@ -195,6 +290,29 @@ export default function RichTextEditor({
           <Redo className="h-4 w-4" />
         </Button>
       </div>
+
+      {showLinkInput && (
+        <div className="flex items-end gap-2 p-2 border-b border-gray-200 bg-white">
+          <div className="flex-1">
+            <Input
+              value={linkUrl}
+              onChange={e => setLinkUrl(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink() } }}
+              placeholder="https://…"
+              className="h-8"
+            />
+          </div>
+          <Button size="sm" onClick={applyLink}>Anvend</Button>
+          <Button size="sm" variant="outline" onClick={() => setShowLinkInput(false)}>Annuller</Button>
+        </div>
+      )}
+
+      <FootnoteDialog
+        open={footnoteOpen}
+        note={editingNote}
+        onCancel={() => setFootnoteOpen(false)}
+        onSave={saveFootnote}
+      />
 
       {/* Editor Content */}
       <div className="p-4 prose max-w-none [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-1">
