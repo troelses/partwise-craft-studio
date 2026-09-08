@@ -1,27 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
+import {
+  KerneopgaveSectionType,
+  KERNEOPGAVE_SECTION_TYPES,
+} from '@/constants/kerneopgaver';
 
-export type KerneopgaveSectionType =
-  | 'almenmedicinske_tilbud'
-  | 'speciallaegepraksis'
-  | 'sygehus'
-  | 'faellesopgaver'
-  | 'fremtidig_varetagelse';
-
-export const KERNEOPGAVE_SECTION_LABELS: Record<KerneopgaveSectionType, string> = {
-  almenmedicinske_tilbud: 'Almenmedicinske tilbud',
-  speciallaegepraksis:    'Speciallægepraksis',
-  sygehus:                'Sygehus',
-  faellesopgaver:         'Fællesopgaver med andre specialer',
-  fremtidig_varetagelse:  'Fremtidig varetagelse',
-};
-
-export const KERNEOPGAVE_SECTION_TYPES: KerneopgaveSectionType[] = [
-  'almenmedicinske_tilbud',
-  'speciallaegepraksis',
-  'sygehus',
-  'faellesopgaver',
-  'fremtidig_varetagelse',
-];
+// The five subsection types live in constants so that the .docx importer can
+// use them without importing the Supabase client. Re-exported here so existing
+// imports of this module are unaffected.
+export type { KerneopgaveSectionType } from '@/constants/kerneopgaver';
+export {
+  KERNEOPGAVE_SECTION_LABELS,
+  KERNEOPGAVE_SECTION_TYPES,
+} from '@/constants/kerneopgaver';
 
 export interface KerneopgaveSection {
   id: string;
