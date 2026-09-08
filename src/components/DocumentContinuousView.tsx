@@ -132,7 +132,17 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
 
   const sortedSections = [...documentSections].sort((a, b) => a.order - b.order);
 
+  // Footnote numbering runs continuously across the whole document, so it is
+  // computed here — above the section loop — and supplied to every section's
+  // renderer through context. Sections are saved independently, so nothing is
+  // persisted: inserting a footnote in an early section renumbers the later
+  // ones on the next render without touching their stored content.
+  const orderedContents = sortedSections.map(section => section.content);
+  const footnoteEntries = collectFootnotes(orderedContents);
+  const footnoteNumbering = buildNumbering(orderedContents);
+
   return (
+    <FootnoteNumberingContext.Provider value={footnoteNumbering}>
     <div className="max-w-4xl mx-auto">
       {/* Document header */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
