@@ -39,7 +39,12 @@ editor succeeds and the new version carries the inherited row — and an editor
 who never held `can_edit` on the source is **still refused**, which is what
 proves it inherits rather than grants.
 
-## 1. Run this migration in the Supabase SQL editor first
+## 1. Create `supabase/migrations/20260904090000-inherit-legacy-permissions-on-version.sql`
+
+**Run this in the Supabase SQL editor before applying the rest of this prompt.**
+Creating the file records the schema in version control; it does not execute
+anything. Section 4's pre-flight guard counts a `can_edit` row on the source
+document as sufficient, which is only true once this has run.
 
 ```sql
 -- Inherit legacy per-document permissions when a version is created.
