@@ -196,12 +196,25 @@ const DocumentView = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExport('word')}>
-                      Export as Word
+                    <DropdownMenuLabel>Godkendt version</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleExport('word', 'published')}>
+                      Word
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                      Export as PDF
+                    <DropdownMenuItem onClick={() => handleExport('pdf', 'published')}>
+                      PDF
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Arbejdsudkast</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleExport('word', 'draft')}>
+                      Word
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('pdf', 'draft')}>
+                      PDF
+                    </DropdownMenuItem>
+                    <p className="px-2 py-2 text-xs text-gray-500 max-w-[220px]">
+                      Kerneopgaver har ingen godkendt version og eksporteres altid
+                      som udkast.
+                    </p>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
