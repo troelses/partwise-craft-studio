@@ -39,7 +39,7 @@ const functionDeclarations = [
   {
     name: "get_document_text",
     description:
-      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents.",
+      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
     parameters: { type: "object", properties: { doc_id: { type: "string" } }, required: ["doc_id"] },
   },
 ];
