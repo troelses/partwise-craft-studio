@@ -7,6 +7,9 @@ export interface DocumentSection {
   createdAt: string;
   updatedAt: string;
   templateSectionId?: string;
+  /** template_sections.section_key — identifies sections needing special
+   *  handling, currently only 'kerneopgaver'. */
+  sectionKey?: string | null;
 }
 
 export interface Document {

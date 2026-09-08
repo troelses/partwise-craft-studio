@@ -7,6 +7,13 @@ import {
   FootnoteList,
 } from '@/utils/richTextRenderer';
 import { collectFootnotes, buildNumbering } from '@/utils/footnotes';
+import {
+  ContentBlock,
+  buildContentBlocks,
+  blockContents,
+  fetchKerneopgaver,
+} from '@/utils/documentContent';
+import { Kerneopgave } from '@/services/kerneopgaverService';
 
 interface DocumentContinuousViewProps {
   document: Document;
@@ -18,6 +25,7 @@ interface TemplateSection {
   position: number;
   level: number;
   description?: string;
+  section_key?: string | null;
 }
 
 interface DocumentSectionWithTemplate {
@@ -33,10 +41,13 @@ interface DocumentSectionWithTemplate {
 
 const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ document }) => {
   const [documentSections, setDocumentSections] = useState<DocumentSectionWithTemplate[]>([]);
+  const [kerneopgaver, setKerneopgaver] = useState<Kerneopgave[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDocumentSections();
+    // Section 2.2's body lives in its own tables, not in document_sections.
+    fetchKerneopgaver(document.id).then(setKerneopgaver);
   }, [document.id]);
 
   const fetchDocumentSections = async () => {
@@ -132,14 +143,40 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
 
   const sortedSections = [...documentSections].sort((a, b) => a.order - b.order);
 
+  // One ordered list of everything the document contains, with the kerneopgaver
+  // spliced in at section 2.2. The exporters build the same list from the same
+  // helper, which is what makes footnote numbers match between screen and Word.
+  const blocks = buildContentBlocks(
+    sortedSections.map(section => ({
+      id: section.id,
+      title: section.title,
+      content: section.content,
+      order: section.order,
+      documentId: section.documentId,
+      createdAt: section.createdAt,
+      updatedAt: section.updatedAt,
+      templateSectionId: section.templateSection?.id,
+      sectionKey: section.templateSection?.section_key ?? null,
+    })),
+    kerneopgaver
+  );
+
   // Footnote numbering runs continuously across the whole document, so it is
-  // computed here — above the section loop — and supplied to every section's
-  // renderer through context. Sections are saved independently, so nothing is
-  // persisted: inserting a footnote in an early section renumbers the later
-  // ones on the next render without touching their stored content.
-  const orderedContents = sortedSections.map(section => section.content);
+  // computed here — above the render loop — and supplied to every renderer
+  // through context. Nothing is persisted: inserting a footnote in an early
+  // section renumbers the later ones on the next render without touching their
+  // stored content.
+  const orderedContents = blockContents(blocks);
   const footnoteEntries = collectFootnotes(orderedContents);
   const footnoteNumbering = buildNumbering(orderedContents);
+
+  // A new card starts at each template section; kerneopgave blocks belong to the
+  // card of the section they were spliced into.
+  const cards: ContentBlock[][] = [];
+  for (const block of blocks) {
+    if (block.kind === 'section' || cards.length === 0) cards.push([block]);
+    else cards[cards.length - 1].push(block);
+  }
 
   return (
     <FootnoteNumberingContext.Provider value={footnoteNumbering}>
@@ -156,21 +193,35 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
 
       {/* Document sections */}
       <div className="space-y-6">
-        {sortedSections.map((section) => (
-          <div key={section.id} className="bg-white p-6 rounded-lg shadow-sm" id={`section-${section.id}`}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
+        {cards.map((card) => (
+          <div key={card[0].key} className="bg-white p-6 rounded-lg shadow-sm" id={`section-${card[0].key}`}>
+            {card.map((block, i) => (
+              <div key={block.key} className={block.depth > 0 ? 'mt-5 pl-4 border-l-2 border-gray-200' : ''}>
+                {block.depth === 0 && (
+                  <h2 className="text-xl font-semibold mb-2">{block.title}</h2>
+                )}
+                {block.depth === 1 && (
+                  <h3 className="text-lg font-semibold mb-2">{block.title}</h3>
+                )}
+                {block.depth === 2 && (
+                  <h4 className="text-base font-medium mb-1 text-gray-700">{block.title}</h4>
+                )}
+
+                {block.kind !== 'kerneopgaveTitle' && (
+                  <div className="prose max-w-none">
+                    {block.content ? (
+                      renderRichText(block.content)
+                    ) : (
+                      <p className="text-gray-400 italic">
+                        {block.depth === 0
+                          ? 'No content available for this section.'
+                          : 'Intet indhold.'}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-            
-            <div className="prose max-w-none">
-              {section.content ? (
-                renderRichText(section.content)
-              ) : (
-                <p className="text-gray-400 italic">No content available for this section.</p>
-              )}
-            </div>
+            ))}
           </div>
         ))}
       </div>
