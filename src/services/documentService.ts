@@ -140,7 +140,14 @@ export const documentService = {
   },
 
   // Get a single document
-  getDocument: async (id: string): Promise<Document | undefined> => {
+  // `prefer` selects which stored content a section reports. Defaults to
+  // 'draft', which is what every existing caller expects; the export menu asks
+  // for 'published' when exporting the approved version.
+  getDocument: async (
+    id: string,
+    opts?: { prefer?: 'draft' | 'published' }
+  ): Promise<Document | undefined> => {
+    const prefer = opts?.prefer ?? 'draft';
     try {
       const { data: docData, error: docError } = await supabase
         .from('documents')
