@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, GitBranch, Plus, Star } from 'lucide-react';
+import { Check, GitBranch, Plus, Star, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import {
 import { documentService, DocumentVersion } from '@/services/documentService';
 import { templateService, Template } from '@/services/templateService';
 import { useToast } from '@/hooks/use-toast';
+import DocumentImportDialog from '@/components/DocumentImportDialog';
 
 interface DocumentVersionsProps {
   documentId: string;
