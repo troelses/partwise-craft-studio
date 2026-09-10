@@ -172,6 +172,14 @@ const DocumentVersions: React.FC<DocumentVersionsProps> = ({ documentId, canCrea
 
   return (
     <div className="max-w-4xl mx-auto">
+      <DocumentImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        documentId={documentId}
+        currentTemplateId={sourceVersion?.templateId ?? null}
+        onImported={(newId) => navigate(`/documents/${newId}`)}
+      />
+
       <div className="flex justify-between items-start mb-4">
         <div>
           <h2 className="text-xl font-medium flex items-center">
