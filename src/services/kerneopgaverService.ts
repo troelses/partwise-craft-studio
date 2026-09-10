@@ -31,6 +31,28 @@ export interface Kerneopgave {
   updatedAt: string;
 }
 
+/** One subsection of an imported kerneopgave. */
+export interface KerneopgaveImportSection {
+  sectionType: KerneopgaveSectionType;
+  /** TipTap document as a JSON string; empty for a subsection with no content. */
+  draftContent: string;
+}
+
+/** One kerneopgave as the .docx importer produces it. */
+export interface KerneopgaveImportItem {
+  title: string;
+  sections: KerneopgaveImportSection[];
+}
+
+const parseDraftContent = (value: string | undefined): any => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export const kerneopgaverService = {
   async getKerneopgaver(documentId: string): Promise<Kerneopgave[]> {
     const { data, error } = await supabase
@@ -102,6 +124,133 @@ export const kerneopgaverService = {
         updatedAt: new Date().toISOString(),
       })),
     };
+  },
+
+  /**
+   * Whether the current user could write kerneopgaver into a version created
+   * from this document.
+   *
+   * This is not defensive duplication of a policy — it is a pre-flight for a
+   * real gap. The kerneopgaver policies grant write access through the legacy
+   * `user_permissions.can_edit` table, while `create_document_version` inherits
+   * `document_access` grants only — so until the accompanying migration, a new
+   * version had no `user_permissions` rows at all and only admins and the team
+   * lead could write kerneopgaver into one.
+   *
+   * Without this check a write-level editor's import would create the version,
+   * write every section, and only then be refused by RLS — leaving a
+   * half-imported version behind. Checked before anything is created instead.
+   */
+  async canWriteKerneopgaverInNewVersion(sourceDocumentId: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    // user_profiles keyed by user_id, matching check_user_role and the rest of
+    // the app's own admin checks.
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profile?.role === 'admin') return true;
+
+    const { data: document } = await supabase
+      .from('documents')
+      .select('team_lead_id')
+      .eq('id', sourceDocumentId)
+      .maybeSingle();
+
+    if ((document as { team_lead_id?: string | null } | null)?.team_lead_id === user.id) {
+      return true;
+    }
+
+    // The legacy row is what the kerneopgaver policies actually read, and
+    // create_document_version now copies it onto the new version.
+    const { data: legacy } = await supabase
+      .from('user_permissions')
+      .select('can_edit')
+      .eq('user_id', user.id)
+      .eq('document_id', sourceDocumentId)
+      .eq('can_edit', true)
+      .limit(1);
+
+    return (legacy || []).length > 0;
+  },
+
+  /**
+   * Bulk-create kerneopgaver and their subsections for a freshly imported
+   * version. Two statements regardless of size, where the per-item path would
+   * be roughly 120 round trips for the largest of the real documents.
+   *
+   * Returns the number of items created.
+   */
+  async importKerneopgaver(
+    documentId: string,
+    items: KerneopgaveImportItem[]
+  ): Promise<number> {
+    if (items.length === 0) return 0;
+
+    // Positions are assigned here rather than read back. The target is always a
+    // newly created version, which has no kerneopgaver of its own, and distinct
+    // positions are what lets the inserted rows be matched back to the items
+    // they came from without relying on the order the API returns them in.
+    const { data: inserted, error: itemError } = await supabase
+      .from('kerneopgaver')
+      .insert(
+        items.map((item, index) => ({
+          document_id: documentId,
+          title: item.title,
+          position: (index + 1) * 10,
+        }))
+      )
+      .select('id, position');
+
+    if (itemError) throw itemError;
+
+    const idByPosition = new Map<number, string>();
+    for (const row of inserted || []) {
+      idByPosition.set((row as any).position, (row as any).id);
+    }
+
+    if (idByPosition.size !== items.length) {
+      throw new Error(
+        `Kunne ikke oprette alle kerneopgaver (${idByPosition.size} af ${items.length}).`
+      );
+    }
+
+    const now = new Date().toISOString();
+    const sectionRows: Array<{
+      kerneopgave_id: string;
+      section_type: KerneopgaveSectionType;
+      draft_content: any;
+      updated_at: string;
+    }> = [];
+
+    items.forEach((item, index) => {
+      const kerneopgaveId = idByPosition.get((index + 1) * 10) as string;
+      const contentByType = new Map(
+        item.sections.map(section => [section.sectionType, section.draftContent])
+      );
+
+      // All five rows are always created, exactly as addKerneopgave does.
+      for (const sectionType of KERNEOPGAVE_SECTION_TYPES) {
+        sectionRows.push({
+          kerneopgave_id: kerneopgaveId,
+          section_type: sectionType,
+          draft_content: parseDraftContent(contentByType.get(sectionType)),
+          updated_at: now,
+        });
+      }
+    });
+
+    const { error: sectionError } = await supabase
+      .from('kerneopgave_sections')
+      .insert(sectionRows);
+
+    if (sectionError) throw sectionError;
+
+    return items.length;
   },
 
   async updateKerneopgaveTitle(id: string, title: string): Promise<void> {
