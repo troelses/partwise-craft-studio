@@ -51,6 +51,7 @@ const DocumentVersions: React.FC<DocumentVersionsProps> = ({ documentId, canCrea
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [copyContent, setCopyContent] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -182,10 +183,22 @@ const DocumentVersions: React.FC<DocumentVersionsProps> = ({ documentId, canCrea
           </p>
         </div>
         {canCreate && (
-          <Button onClick={openDialog} className="flex items-center">
-            <Plus className="h-4 w-4 mr-1" />
-            New version
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Importing a Word document creates a version, so it belongs here
+                and is gated on the same write-level access. */}
+            <Button
+              variant="outline"
+              onClick={() => setIsImportOpen(true)}
+              className="flex items-center"
+            >
+              <Upload className="h-4 w-4 mr-1" />
+              Importér fra Word
+            </Button>
+            <Button onClick={openDialog} className="flex items-center">
+              <Plus className="h-4 w-4 mr-1" />
+              New version
+            </Button>
+          </div>
         )}
       </div>
 
