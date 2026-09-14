@@ -27,6 +27,7 @@ and the schema is simply unchanged.
 | 13 | `13-intern-medicin-template.md` | Second template for the Intern medicin specialties; kerneopgave constants extracted |
 | 14 | `14-docx-import-parser.md` | .docx import part 1: the parser (no UI, no database access) |
 | 15 | `15-docx-import-write.md` | .docx import part 2: import dialog, write path, and the permissions migration it needs |
+| 16 | `16-import-dialog-template-list.md` | Fix: the import dialog's template picker was never populated |
 
 ## Order to apply
 
@@ -63,7 +64,17 @@ thirteen.
 
 ## Status
 
-Prompts 1–8 have been applied. Three migrations are live on the Supabase project
+Prompts 1–15 and all six migrations have been applied. Prompt 16 is a fix found
+in use and is the only one outstanding.
+
+Note: the three migration files `20260903090000`, `20260903120000` and
+`20260904090000` were run in the SQL editor but never landed in `main` — the
+prompts that carry them were applied without their "create this file" step. The
+schema is correct; the repo simply does not record it. Re-applying just that step
+from prompts 12, 13 and 15 would close the gap, and **the SQL must not be run
+again**.
+
+Prompts 1–8 were applied earlier. Three migrations are live on the Supabase project
 — `20260831120000`, `20260901090000` and `20260902090000` (verified:
 `schema-status.sql` reports `ok` on all 14 rows).
 
