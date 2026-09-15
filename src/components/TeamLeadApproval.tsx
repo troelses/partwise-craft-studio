@@ -8,6 +8,16 @@ import {
   User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { documentService } from '@/services/documentService';
 import { renderRichText } from '@/utils/richTextRenderer';
@@ -40,6 +50,9 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState<string | null>(null);
+  const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  // { done, total } while a bulk approval is running, otherwise null.
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,6 +102,45 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
     }
   };
 
+  // Exactly the sections that show an individual "Approve & Publish" button, so
+  // the bulk action can never publish something the user could not publish one
+  // at a time.
+  const pendingSections = sections.filter(
+    section => section.draft_content && !section.is_approved
+  );
+
+  const handleApproveAll = async () => {
+    setConfirmAllOpen(false);
+    setBulkProgress({ done: 0, total: pendingSections.length });
+    try {
+      const { approved, error } = await documentService.approveSections(
+        pendingSections.map(section => section.id),
+        (done, total) => setBulkProgress({ done, total })
+      );
+
+      if (error) {
+        toast({
+          title: approved > 0 ? 'Partially approved' : 'Approval failed',
+          description:
+            approved > 0
+              ? `${approved} of ${pendingSections.length} sections were approved before it stopped: ${error}`
+              : error,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: `${approved} ${approved === 1 ? 'section was' : 'sections were'} approved and published.`,
+        });
+      }
+
+      await fetchSectionsForApproval();
+      onApprovalChange?.();
+    } finally {
+      setBulkProgress(null);
+    }
+  };
+
   const getSectionStatus = (section: DocumentSectionForApproval) => {
     if (section.is_approved) {
       return { status: 'approved', icon: CheckCircle, color: 'text-green-600' };
@@ -122,6 +174,49 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
         <p className="text-gray-600 mb-4">
           Review and approve content changes for each section. Draft content will be published when approved.
         </p>
+
+        {pendingSections.length > 0 && (
+          <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <p className="text-sm text-yellow-700">
+              <strong>{pendingSections.length}</strong>{' '}
+              {pendingSections.length === 1 ? 'section is' : 'sections are'} waiting
+              for approval.
+            </p>
+            <Button
+              onClick={() => setConfirmAllOpen(true)}
+              disabled={bulkProgress !== null || isApproving !== null}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {bulkProgress
+                ? `Approving ${bulkProgress.done} of ${bulkProgress.total}…`
+                : `Approve all (${pendingSections.length})`}
+            </Button>
+          </div>
+        )}
+
+        <AlertDialog open={confirmAllOpen} onOpenChange={setConfirmAllOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Approve all {pendingSections.length}{' '}
+                {pendingSections.length === 1 ? 'section' : 'sections'}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Each section&apos;s draft becomes the published version, replacing what is
+                published today, and the result is what everyone else sees and what
+                Ask AI reads. Sections with no draft, and sections already approved,
+                are left alone. This cannot be undone from here — the previous
+                published text is overwritten.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleApproveAll}>
+                Approve and publish
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {sections.map((section) => {
@@ -145,7 +240,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
                   {section.draft_content && !section.is_approved && (
                     <Button
                       onClick={() => handleApproveSection(section.id)}
-                      disabled={isApproving === section.id}
+                      disabled={isApproving === section.id || bulkProgress !== null}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                     >

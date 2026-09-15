@@ -626,6 +626,40 @@ export const documentService = {
     }
   },
 
+  // Approve several sections in order.
+  //
+  // There is no bulk RPC and approve_section is SECURITY DEFINER with its own
+  // permission check, so each section is a separate call. It stops at the first
+  // failure: the check is per document, so a refusal on one section refuses
+  // every other one too, and carrying on would only produce a run of identical
+  // errors. Sections approved before the failure stay approved, and re-running
+  // skips them because they are no longer pending.
+  approveSections: async (
+    sectionIds: string[],
+    onProgress?: (done: number, total: number) => void
+  ): Promise<{ approved: number; error: string | null }> => {
+    let approved = 0;
+
+    for (const sectionId of sectionIds) {
+      const { data, error } = await supabase.rpc('approve_section', {
+        section_id: sectionId,
+      });
+
+      if (error) {
+        console.error('Error approving section:', error);
+        return { approved, error: error.message };
+      }
+      if (data !== true) {
+        return { approved, error: 'Sektionen kunne ikke findes.' };
+      }
+
+      approved++;
+      onProgress?.(approved, sectionIds.length);
+    }
+
+    return { approved, error: null };
+  },
+
   assignTeamLead: async (
     documentId: string,
     userId: string | null
