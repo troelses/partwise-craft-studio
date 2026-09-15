@@ -228,6 +228,37 @@ const inlineNodes = (p: Element, ctx: InlineCtx, linkHref?: string): Record<stri
  */
 const MAX_GLUED_HEADING = 45;
 const MIN_GLUED_BODY = 40;
+
+/** A heading separated from its body by a line break rather than a paragraph
+ *  mark, inside one `w:p`:
+ *
+ *    <w:r><w:rPr><w:b/></w:rPr><w:t>Styrkelse af det primære sundhedsvæsen</w:t></w:r>
+ *    <w:r><w:br/><w:t>Den kommende sundhedsreform …</w:t></w:r>
+ *
+ *  56 paragraphs across three documents are written this way, and unlike the
+ *  glued case below it is not confined to kerneopgave subsections — section 4
+ *  uses it for headings with free-form names. The break is the author's own
+ *  signal that the bold text ends a line, so the structure is the gate here and
+ *  no name matching is needed. */
+const MAX_BREAK_HEADING = 90;
+const splitHeadingBeforeBreak = (
+  content: Record<string, unknown>[]
+): { heading: string; rest: Record<string, unknown>[] } | null => {
+  const [lead, brk, ...rest] = content;
+  if (!lead || !brk || rest.length === 0) return null;
+  if (lead.type !== 'text' || brk.type !== 'hardBreak') return null;
+  const marks = (lead.marks ?? []) as Array<{ type?: string }>;
+  if (!marks.some(m => m?.type === 'bold')) return null;
+  const heading = String(lead.text ?? '').trim();
+  if (!heading || heading.length > MAX_BREAK_HEADING) return null;
+  const bodyText = rest
+    .map(n => (n.type === 'text' ? String(n.text ?? '') : ''))
+    .join('')
+    .trim();
+  if (bodyText.length < MIN_GLUED_BODY) return null;
+  return { heading, rest };
+};
+
 const splitGluedHeading = (
   content: Record<string, unknown>[],
   looksLikeHeading: (text: string) => boolean
