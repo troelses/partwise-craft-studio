@@ -30,6 +30,7 @@ and the schema is simply unchanged.
 | 16 | `16-import-dialog-template-list.md` | Fix: the import dialog's template picker was never populated |
 | 17 | `17-templates-readable.md` | Fix: `templates` had RLS on with no SELECT policy, so no user could list templates |
 | 18 | `18-ambulant-leadin-and-empty-sections.md` | Ambulant subsection, kerneopgave lead-in text, and hiding empty sections in view mode |
+| 19 | `19-glued-subsection-headings.md` | Parser reads subsection headings written as a bold run inside the body paragraph |
 
 ## Order to apply
 
