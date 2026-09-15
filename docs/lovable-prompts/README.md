@@ -67,26 +67,19 @@ thirteen.
 
 ## Status
 
-Prompts 1–15 and all six migrations have been applied. Prompt 16 is a fix found
-in use and is the only one outstanding.
+Prompts 1–18 and every migration have been applied. **Prompt 19 is the only one
+outstanding.**
 
-Note: the three migration files `20260903090000`, `20260903120000` and
-`20260904090000` were run in the SQL editor but never landed in `main` — the
-prompts that carry them were applied without their "create this file" step. The
-schema is correct; the repo simply does not record it. Re-applying just that step
-from prompts 12, 13 and 15 would close the gap, and **the SQL must not be run
-again**.
+Lovable records applied SQL under its own generated filenames
+(`20260908133355_…`, `20260915083237_…` and so on), not under the names used in
+these prompts. So `supabase/migrations/` on `main` does describe the live schema
+even though none of the filenames match — checked file by file. Do not re-apply
+a prompt's "create this file" step on the grounds that its name is absent, and
+never re-run SQL that has already been applied.
 
-Prompts 1–8 were applied earlier. Three migrations are live on the Supabase project
-— `20260831120000`, `20260901090000` and `20260902090000` (verified:
-`schema-status.sql` reports `ok` on all 14 rows).
-
-Three are **not** yet applied: `20260903090000`, `20260903120000` and
-`20260904090000`. They are steps 1, 2 and 8 above.
-
-Prompts 7 and 8 were bookkeeping — they added the already-applied SQL to the repo
-so version control describes the real schema. They added files only and changed
-no running code; **the SQL in them must not be executed again.**
+Prompts 7 and 8 were bookkeeping — they added already-applied SQL to the repo so
+version control describes the real schema. They added files only and changed no
+running code; **the SQL in them must not be executed again.**
 
 ## Regenerate types
 
