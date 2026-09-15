@@ -15,7 +15,7 @@ import {
   fetchKerneopgaver,
 } from '@/utils/documentContent';
 import { Kerneopgave } from '@/services/kerneopgaverService';
-import { DEFAULT_TEMPLATE_ID } from '@/constants/template;
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template';
 
 interface DocumentContinuousViewProps {
   document: Document;
