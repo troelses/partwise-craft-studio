@@ -104,6 +104,8 @@ const headingBlock = (text: string): DocxBlock => ({
  *
  * - An item with no recognised subsections is not a kerneopgave. Its heading and
  *   text go into the section body instead, which is what it actually is.
+ * - Text before the first recognised subsection belongs to the item, not to a
+ *   subsection, and is carried on the item's own lead_in.
  * - A repeated subsection type must merge, not overwrite. They are concatenated,
  *   and the review screen flags the item so it can be fixed at source.
  */
@@ -120,15 +122,17 @@ const buildKerneopgavePayload = (
     }
 
     const byType = new Map<KerneopgaveSectionType, DocxBlock[]>();
-    item.sections.forEach((section, index) => {
-      // Content before the first recognised subsection heading is prepended to
-      // that subsection rather than dropped — there is nowhere else to put it.
-      const blocks = index === 0 ? [...item.leadIn, ...section.blocks] : section.blocks;
-      byType.set(section.type, [...(byType.get(section.type) ?? []), ...blocks]);
-    });
+    for (const section of item.sections) {
+      byType.set(section.type, [...(byType.get(section.type) ?? []), ...section.blocks]);
+    }
 
     items.push({
       title: item.title,
+      // Lead-in text goes on the item itself. It used to be prepended to
+      // whichever subsection was detected first, which in geriatri meant 32
+      // paragraphs of general description filed under "Fællesopgaver med andre
+      // specialer" for seven of eight items.
+      leadIn: blocksToJson(item.leadIn),
       sections: [...byType.entries()].map(([sectionType, blocks]) => ({
         sectionType,
         draftContent: blocksToJson(blocks),

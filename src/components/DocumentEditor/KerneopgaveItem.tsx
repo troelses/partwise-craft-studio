@@ -21,6 +21,8 @@ interface KerneopgaveItemProps {
 const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editingSection, setEditingSection] = useState<KerneopgaveSectionType | null>(null);
+  // The item's own text, above the subsections. `null` when not being edited.
+  const [leadIn, setLeadIn] = useState<string | null>(null);
   const [pendingContent, setPendingContent] = useState<Partial<Record<KerneopgaveSectionType, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -41,6 +43,21 @@ const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete
       await kerneopgaverService.updateKerneopgaveSection(id, getSectionContent(type));
       setPendingContent(prev => { const next = { ...prev }; delete next[type]; return next; });
       setEditingSection(null);
+      await onUpdate();
+      toast({ title: 'Gemt' });
+    } catch {
+      toast({ title: 'Fejl', description: 'Kunne ikke gemme', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveLeadIn = async () => {
+    if (leadIn === null) return;
+    setIsSaving(true);
+    try {
+      await kerneopgaverService.updateKerneopgaveLeadIn(kerneopgave.id, leadIn);
+      setLeadIn(null);
       await onUpdate();
       toast({ title: 'Gemt' });
     } catch {
@@ -79,6 +96,42 @@ const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete
 
       {isExpanded && (
         <div className="border-t p-4 space-y-6">
+          {/* Introduction to the kerneopgave itself. Imported documents put the
+              paragraphs that precede any named subsection heading here, rather
+              than filing them under whichever subsection happened to come
+              first. */}
+          <div>
+            <div className="flex items-start justify-between">
+              <h5 className="text-sm font-semibold mb-2">Indledning</h5>
+              {leadIn === null && (
+                <Button variant="ghost" size="icon" onClick={() => setLeadIn(kerneopgave.leadIn)}>
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {leadIn !== null ? (
+              <div className="space-y-3">
+                <RichTextEditor
+                  content={leadIn}
+                  onChange={setLeadIn}
+                  placeholder="Indledende beskrivelse af kerneopgaven…"
+                />
+                <div className="flex space-x-2 justify-end">
+                  <Button variant="outline" onClick={() => setLeadIn(null)}>Annuller</Button>
+                  <Button onClick={handleSaveLeadIn} disabled={isSaving}>
+                    {isSaving ? 'Gemmer…' : <><Save className="h-4 w-4 mr-1" /> Gem</>}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="prose max-w-none">
+                {kerneopgave.leadIn
+                  ? renderRichText(kerneopgave.leadIn)
+                  : <span className="text-gray-400 italic">Intet indhold endnu</span>}
+              </div>
+            )}
+          </div>
+
           {KERNEOPGAVE_SECTION_TYPES.map(type => {
             const isEditing = editingSection === type;
             const content = getSectionContent(type);

@@ -11,6 +11,7 @@ import {
   ContentBlock,
   buildContentBlocks,
   blockContents,
+  hideEmptyBlocks,
   fetchKerneopgaver,
 } from '@/utils/documentContent';
 import { Kerneopgave } from '@/services/kerneopgaverService';
@@ -146,7 +147,11 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
   // One ordered list of everything the document contains, with the kerneopgaver
   // spliced in at section 2.2. The exporters build the same list from the same
   // helper, which is what makes footnote numbers match between screen and Word.
-  const blocks = buildContentBlocks(
+  // Empty sections and subsections are hidden here rather than rendered as bare
+  // headings. Most documents fill only three to five of the six kerneopgave
+  // subsections, and this is a read view. Numbering is unaffected: a block with
+  // no content carries no footnotes.
+  const blocks = hideEmptyBlocks(buildContentBlocks(
     sortedSections.map(section => ({
       id: section.id,
       title: section.title,
@@ -159,7 +164,7 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
       sectionKey: section.templateSection?.section_key ?? null,
     })),
     kerneopgaver
-  );
+  ));
 
   // Footnote numbering runs continuously across the whole document, so it is
   // computed here — above the render loop — and supplied to every renderer
@@ -207,7 +212,9 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
                   <h4 className="text-base font-medium mb-1 text-gray-700">{block.title}</h4>
                 )}
 
-                {block.kind !== 'kerneopgaveTitle' && (
+                {/* A kerneopgave title has a body only when the item carries
+                    lead-in text; without it the heading stands alone. */}
+                {(block.kind !== 'kerneopgaveTitle' || block.content) && (
                   <div className="prose max-w-none">
                     {block.content ? (
                       renderRichText(block.content)

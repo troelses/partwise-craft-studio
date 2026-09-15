@@ -77,12 +77,14 @@ export const buildContentBlocks = (
         key: `kerneopgave-${item.id}`,
         kind: 'kerneopgaveTitle',
         title: item.title,
-        content: '',
+        // The item's own text, above its subsections. Empty for most items.
+        content: item.leadIn || '',
         depth: 1,
       });
 
-      // Always emit the five subsections in their canonical order, so a
-      // kerneopgave reads the same everywhere even if a row is missing.
+      // Always emit every subsection in canonical order, so a kerneopgave reads
+      // the same everywhere even if a row is missing. Use hideEmptyBlocks to
+      // drop the ones with nothing in them.
       for (const type of KERNEOPGAVE_SECTION_TYPES) {
         const sub = item.sections.find(s => s.sectionType === type);
         blocks.push({
@@ -97,6 +99,50 @@ export const buildContentBlocks = (
   }
 
   return blocks;
+};
+
+/**
+ * Drop blocks with no content of their own.
+ *
+ * Most documents fill only three to five of the six subsections, and an export
+ * or a read view full of empty headings is noise. Safe with respect to footnote
+ * numbering by construction: a block with no content contains no footnotes, so
+ * removing it cannot renumber anything.
+ *
+ * A heading is kept whenever something beneath it survives — an empty
+ * kerneopgaver section still renders if it has items, and an item with no
+ * lead-in still renders if any subsection has text.
+ */
+export const hideEmptyBlocks = (blocks: ContentBlock[]): ContentBlock[] => {
+  const keep = new Array<boolean>(blocks.length).fill(false);
+
+  // Walk backwards so a heading can see whether anything under it survived.
+  let sectionHasContent = false;
+  let itemHasContent = false;
+
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const block = blocks[i];
+    const hasOwn = block.content.trim() !== '';
+
+    if (block.kind === 'kerneopgaveSection') {
+      keep[i] = hasOwn;
+      if (hasOwn) { itemHasContent = true; sectionHasContent = true; }
+      continue;
+    }
+
+    if (block.kind === 'kerneopgaveTitle') {
+      keep[i] = hasOwn || itemHasContent;
+      if (keep[i]) sectionHasContent = true;
+      itemHasContent = false;
+      continue;
+    }
+
+    keep[i] = hasOwn || sectionHasContent;
+    sectionHasContent = false;
+    itemHasContent = false;
+  }
+
+  return blocks.filter((_, i) => keep[i]);
 };
 
 /** The content strings in document order — the input to footnote numbering. */

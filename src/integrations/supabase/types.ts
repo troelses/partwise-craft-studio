@@ -347,6 +347,7 @@ export type Database = {
           created_at: string
           document_id: string
           id: string
+          lead_in: Json | null
           position: number
           title: string
           updated_at: string
@@ -355,6 +356,7 @@ export type Database = {
           created_at?: string
           document_id: string
           id?: string
+          lead_in?: Json | null
           position?: number
           title: string
           updated_at?: string
@@ -363,6 +365,7 @@ export type Database = {
           created_at?: string
           document_id?: string
           id?: string
+          lead_in?: Json | null
           position?: number
           title?: string
           updated_at?: string

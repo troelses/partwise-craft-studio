@@ -308,7 +308,11 @@ export const exportToWord = async (
         })
       );
 
-      if (block.kind === 'kerneopgaveTitle') continue;
+      // A kerneopgave title carries a body only when the item has lead-in text.
+      // It must be written when present: blockContents() counts it for footnote
+      // numbering, so skipping it would make the Word numbers disagree with the
+      // screen.
+      if (block.kind === 'kerneopgaveTitle' && !block.content) continue;
 
       const paragraphs = contentToParagraphs(block.content, ctx);
       if (paragraphs.length > 0) {
@@ -437,7 +441,7 @@ export const exportToPDF = async (
     for (const block of blocks) {
       const headingSize = block.depth === 0 ? 14 : block.depth === 1 ? 12 : 10;
       write(block.title, headingSize, 'bold', block.depth * 5);
-      if (block.kind === 'kerneopgaveTitle') continue;
+      if (block.kind === 'kerneopgaveTitle' && !block.content) continue;
       const text = contentToPlainText(block.content, numbering);
       write(text || 'Intet indhold.', 11, text ? 'normal' : 'italic', block.depth * 5);
     }

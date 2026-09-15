@@ -25,6 +25,10 @@ export interface Kerneopgave {
   id: string;
   documentId: string;
   title: string;
+  /** Text belonging to the kerneopgave as a whole, shown above its subsections.
+   *  Imported documents put the paragraphs that precede any named subsection
+   *  heading here rather than filing them under an arbitrary subsection. */
+  leadIn: string;
   position: number;
   sections: KerneopgaveSection[];
   createdAt: string;
@@ -41,6 +45,8 @@ export interface KerneopgaveImportSection {
 /** One kerneopgave as the .docx importer produces it. */
 export interface KerneopgaveImportItem {
   title: string;
+  /** TipTap document as a JSON string; empty when the item has no lead-in. */
+  leadIn: string;
   sections: KerneopgaveImportSection[];
 }
 
@@ -67,6 +73,7 @@ export const kerneopgaverService = {
       id: k.id,
       documentId: k.document_id,
       title: k.title,
+      leadIn: k.lead_in ? JSON.stringify(k.lead_in) : '',
       position: k.position,
       createdAt: k.created_at,
       updatedAt: k.updated_at,
@@ -113,6 +120,7 @@ export const kerneopgaverService = {
       id: (k as any).id,
       documentId: (k as any).document_id,
       title: (k as any).title,
+      leadIn: '',
       position: (k as any).position,
       createdAt: (k as any).created_at,
       updatedAt: (k as any).updated_at,
@@ -201,6 +209,7 @@ export const kerneopgaverService = {
         items.map((item, index) => ({
           document_id: documentId,
           title: item.title,
+          lead_in: parseDraftContent(item.leadIn),
           position: (index + 1) * 10,
         }))
       )
@@ -251,6 +260,15 @@ export const kerneopgaverService = {
     if (sectionError) throw sectionError;
 
     return items.length;
+  },
+
+  /** The kerneopgave's own text, above its subsections. */
+  async updateKerneopgaveLeadIn(id: string, leadIn: string): Promise<void> {
+    const { error } = await supabase
+      .from('kerneopgaver')
+      .update({ lead_in: parseDraftContent(leadIn), updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
   },
 
   async updateKerneopgaveTitle(id: string, title: string): Promise<void> {
