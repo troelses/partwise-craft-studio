@@ -55,7 +55,9 @@ in a legacy table. Silent, per-user, and very hard to diagnose.
 
 ## Stages
 
-### Stage A — move kerneopgave RLS onto `document_access` (prerequisite)
+### Stage A — move kerneopgave RLS onto `document_access` (prerequisite) — BUILT
+
+Delivered as prompt 23 (`20260916090000-kerneopgaver-on-document-access.sql`).
 
 Replace the four `user_permissions`-based policies on `kerneopgaver` and
 `kerneopgave_sections` with `has_document_access` for reading and
@@ -111,18 +113,21 @@ can tell which kerneopgave and which subsection a passage belongs to, and
 ordering by template position, then `kerneopgaver.position`, then the canonical
 subsection order.
 
-**Two costs worth accepting knowingly:**
+**Both costs are closed rather than accepted** (decided 2026-09-16):
 
-- The Danish subsection labels would exist in SQL as well as in
-  `src/constants/kerneopgaver.ts`. That is a second place to update when a
-  subsection is added — exactly what happened with `Ambulant`. A small
-  `kerneopgave_section_labels` table seeded by migration would avoid the
-  duplication and is worth considering.
-- **Kerneopgave titles would still not be searchable.** `search_documents` would
-  match subsection body text only, so a search for *"Fald"* finds geriatri only
-  if those letters appear in a body paragraph. Indexing `kerneopgaver.title` as
-  well is a small add-on; at 126 items the cost is negligible, but it needs its
-  own index expression to stay fast as the corpus grows.
+- **A `kerneopgave_section_labels` table**, seeded by migration with the six
+  `section_type` values and their Danish labels, is the single source of truth.
+  The SQL joins it; `src/constants/kerneopgaver.ts` keeps its own copy for the
+  UI but gains a comment pointing at the table, and adding a seventh subsection
+  becomes one migration plus one constant rather than two silent edits. This is
+  the mistake `Ambulant` would otherwise invite a second time.
+- **Kerneopgave titles become searchable.** `search_documents` and
+  `count_documents_containing` gain a branch matching
+  `to_tsvector('danish', k.title)`, with its own functional GIN index on
+  `kerneopgaver(title)`. At 126 items an index is not strictly needed, but the
+  expression must match the query exactly for the planner to use it later, and
+  adding it now costs nothing. Searching for *"Fald"* will then find geriatri
+  whether or not the word appears in a body paragraph.
 
 ### Stage E — read view and export
 

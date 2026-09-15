@@ -34,6 +34,7 @@ and the schema is simply unchanged.
 | 20 | `20-line-breaks-and-heading-before-break.md` | Line breaks survive import; a bold heading before one becomes a real heading |
 | 21 | `21-view-mode-template-resolution.md` | Fix: view mode read the original template's sections for every document |
 | 22 | `22-approve-all.md` | Approve and publish every waiting section from the approval dashboard |
+| 23 | `23-kerneopgaver-on-document-access.md` | Kerneopgave RLS moves onto document_access (Stage A of the approval scope) |
 
 ## Order to apply
 
@@ -70,7 +71,7 @@ thirteen.
 
 ## Status
 
-Prompts 1–21 and every migration have been applied. **Prompt 22 is the only one
+Prompts 1–21 and every migration have been applied. **Prompts 22 and 23 are
 outstanding.**
 
 Lovable records applied SQL under its own generated filenames
