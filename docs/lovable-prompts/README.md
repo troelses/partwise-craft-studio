@@ -36,6 +36,7 @@ and the schema is simply unchanged.
 | 22 | `22-approve-all.md` | Approve and publish every waiting section from the approval dashboard |
 | 23 | `23-kerneopgaver-on-document-access.md` | Kerneopgave RLS moves onto document_access (Stage A of the approval scope) |
 | 24 | `24-kerneopgave-publish-columns.md` | Publish columns and guard trigger on kerneopgave_sections (Stage B) |
+| 25 | `25-approve-document.md` | Atomic approve_document across both tables, replacing the client loop (Stage C) |
 
 ## Order to apply
 
@@ -72,8 +73,8 @@ thirteen.
 
 ## Status
 
-Prompts 1–21 and every migration have been applied. **Prompts 22, 23 and 24 are
-outstanding.**
+Prompts 1–21 and every migration have been applied. **Prompts 23, 24 and 25 are
+outstanding** (22 is applied).
 
 Lovable records applied SQL under its own generated filenames
 (`20260908133355_…`, `20260915083237_…` and so on), not under the names used in

@@ -95,7 +95,9 @@ decision. Worth closing at some point.
 could set `published_content` themselves and bypass approval entirely. Mirror
 the trigger.
 
-### Stage C — approve the whole document in one call
+### Stage C — approve the whole document in one call — BUILT
+
+Delivered as prompt 25 (`20260918090000-approve-document.sql`).
 
 New `approve_document(doc_id uuid)`: `SECURITY DEFINER`, one transaction,
 approves every pending `document_sections` row **and** every pending
