@@ -102,6 +102,45 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
     }
   };
 
+  // Exactly the sections that show an individual "Approve & Publish" button, so
+  // the bulk action can never publish something the user could not publish one
+  // at a time.
+  const pendingSections = sections.filter(
+    section => section.draft_content && !section.is_approved
+  );
+
+  const handleApproveAll = async () => {
+    setConfirmAllOpen(false);
+    setBulkProgress({ done: 0, total: pendingSections.length });
+    try {
+      const { approved, error } = await documentService.approveSections(
+        pendingSections.map(section => section.id),
+        (done, total) => setBulkProgress({ done, total })
+      );
+
+      if (error) {
+        toast({
+          title: approved > 0 ? 'Partially approved' : 'Approval failed',
+          description:
+            approved > 0
+              ? `${approved} of ${pendingSections.length} sections were approved before it stopped: ${error}`
+              : error,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: `${approved} ${approved === 1 ? 'section was' : 'sections were'} approved and published.`,
+        });
+      }
+
+      await fetchSectionsForApproval();
+      onApprovalChange?.();
+    } finally {
+      setBulkProgress(null);
+    }
+  };
+
   const getSectionStatus = (section: DocumentSectionForApproval) => {
     if (section.is_approved) {
       return { status: 'approved', icon: CheckCircle, color: 'text-green-600' };
