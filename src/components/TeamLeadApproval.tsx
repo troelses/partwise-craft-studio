@@ -50,6 +50,9 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState<string | null>(null);
+  const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  // { done, total } while a bulk approval is running, otherwise null.
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
