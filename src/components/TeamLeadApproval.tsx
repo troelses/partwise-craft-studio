@@ -240,7 +240,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
                   {section.draft_content && !section.is_approved && (
                     <Button
                       onClick={() => handleApproveSection(section.id)}
-                      disabled={isApproving === section.id}
+                      disabled={isApproving === section.id || bulkProgress !== null}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                     >
