@@ -317,7 +317,8 @@ export const parseBody = (
     if (!text && content.length === 0) continue;
 
     if (!level) {
-      const glued = splitGluedHeading(content, boldLooksLikeHeading);
+      const glued =
+        splitHeadingBeforeBreak(content) ?? splitGluedHeading(content, boldLooksLikeHeading);
       if (glued) {
         blocks.push({
           level: 4,
