@@ -1,5 +1,5 @@
 /**
- * The five fixed subsections of a kerneopgave.
+ * The fixed subsections of a kerneopgave.
  *
  * These live here rather than in kerneopgaverService so that code which only
  * needs to reason about the shape — the .docx importer, in particular — does not
@@ -14,6 +14,7 @@ export type KerneopgaveSectionType =
   | 'almenmedicinske_tilbud'
   | 'speciallaegepraksis'
   | 'sygehus'
+  | 'ambulant'
   | 'faellesopgaver'
   | 'fremtidig_varetagelse';
 
@@ -21,6 +22,7 @@ export const KERNEOPGAVE_SECTION_LABELS: Record<KerneopgaveSectionType, string> 
   almenmedicinske_tilbud: 'Almenmedicinske tilbud',
   speciallaegepraksis:    'Speciallægepraksis',
   sygehus:                'Sygehus',
+  ambulant:               'Ambulant',
   faellesopgaver:         'Fællesopgaver med andre specialer',
   fremtidig_varetagelse:  'Fremtidig varetagelse',
 };
@@ -29,6 +31,7 @@ export const KERNEOPGAVE_SECTION_TYPES: KerneopgaveSectionType[] = [
   'almenmedicinske_tilbud',
   'speciallaegepraksis',
   'sygehus',
+  'ambulant',
   'faellesopgaver',
   'fremtidig_varetagelse',
 ];
