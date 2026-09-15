@@ -174,6 +174,49 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
         <p className="text-gray-600 mb-4">
           Review and approve content changes for each section. Draft content will be published when approved.
         </p>
+
+        {pendingSections.length > 0 && (
+          <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <p className="text-sm text-yellow-700">
+              <strong>{pendingSections.length}</strong>{' '}
+              {pendingSections.length === 1 ? 'section is' : 'sections are'} waiting
+              for approval.
+            </p>
+            <Button
+              onClick={() => setConfirmAllOpen(true)}
+              disabled={bulkProgress !== null || isApproving !== null}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {bulkProgress
+                ? `Approving ${bulkProgress.done} of ${bulkProgress.total}…`
+                : `Approve all (${pendingSections.length})`}
+            </Button>
+          </div>
+        )}
+
+        <AlertDialog open={confirmAllOpen} onOpenChange={setConfirmAllOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Approve all {pendingSections.length}{' '}
+                {pendingSections.length === 1 ? 'section' : 'sections'}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Each section&apos;s draft becomes the published version, replacing what is
+                published today, and the result is what everyone else sees and what
+                Ask AI reads. Sections with no draft, and sections already approved,
+                are left alone. This cannot be undone from here — the previous
+                published text is overwritten.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleApproveAll}>
+                Approve and publish
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {sections.map((section) => {
