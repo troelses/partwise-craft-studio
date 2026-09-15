@@ -35,6 +35,7 @@ and the schema is simply unchanged.
 | 21 | `21-view-mode-template-resolution.md` | Fix: view mode read the original template's sections for every document |
 | 22 | `22-approve-all.md` | Approve and publish every waiting section from the approval dashboard |
 | 23 | `23-kerneopgaver-on-document-access.md` | Kerneopgave RLS moves onto document_access (Stage A of the approval scope) |
+| 24 | `24-kerneopgave-publish-columns.md` | Publish columns and guard trigger on kerneopgave_sections (Stage B) |
 
 ## Order to apply
 
@@ -71,7 +72,7 @@ thirteen.
 
 ## Status
 
-Prompts 1–21 and every migration have been applied. **Prompts 22 and 23 are
+Prompts 1–21 and every migration have been applied. **Prompts 22, 23 and 24 are
 outstanding.**
 
 Lovable records applied SQL under its own generated filenames

@@ -75,10 +75,18 @@ visibility they should already have had; anyone holding *only* a legacy
 group exists is a question about your data, and the migration should report the
 count before changing anything.
 
-### Stage B — schema
+### Stage B — schema — BUILT
+
+Delivered as prompt 24 (`20260917090000-kerneopgave-publish-columns.sql`).
 
 Add to `kerneopgave_sections`: `published_content jsonb`, `is_approved boolean
 not null default false`, `approved_by uuid`, `approved_at timestamptz`.
+
+The trigger guards INSERT as well as UPDATE. **`document_sections` is still
+guarded on UPDATE only**, so a writer can create a row there with
+`published_content` already set — a pre-existing hole, left open deliberately
+because tightening a table this work does not otherwise touch is a separate
+decision. Worth closing at some point.
 
 **A publish guard trigger is required, not optional.** `document_sections` has
 `guard_section_publish_trg`, which blocks a non-approver from writing
