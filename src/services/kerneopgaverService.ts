@@ -291,9 +291,19 @@ export const kerneopgaverService = {
     let parsed: any = null;
     try { parsed = draftContent ? JSON.parse(draftContent) : null; } catch { /* leave null */ }
 
+    // Editing clears the approval, exactly as documentService.updateSection does
+    // for an ordinary section. Without this an edited subsection would keep
+    // reading as approved while its published text was the older version, and it
+    // would never reappear in the approval dashboard.
     const { error } = await supabase
       .from('kerneopgave_sections')
-      .update({ draft_content: parsed, updated_at: new Date().toISOString() })
+      .update({
+        draft_content: parsed,
+        is_approved: false,
+        approved_by: null,
+        approved_at: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', sectionId);
 
     if (error) throw error;
