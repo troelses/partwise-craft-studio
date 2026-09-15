@@ -191,16 +191,23 @@ const inlineNodes = (p: Element, ctx: InlineCtx, linkHref?: string): Record<stri
       continue;
     }
 
-    if (el(e, 'br').length > 0 && !runText(e)) { out.push({ type: 'hardBreak' }); continue; }
-
-    const text = runText(e);
-    if (!text) continue;
-
     const marks: Array<{ type: string; attrs?: Record<string, unknown> }> =
       runMarks(e).map(m => ({ type: m }));
     if (linkHref) marks.push({ type: 'link', attrs: { href: linkHref } });
 
-    out.push(marks.length ? { type: 'text', text, marks } : { type: 'text', text });
+    // Walk the run's own children in order. Word commonly writes the break and
+    // the text it precedes into a single run — `<w:r><w:br/><w:t>body</w:t></w:r>`
+    // — and treating the run as one unit dropped the break entirely: 77 of the
+    // 112 line breaks in the real documents were lost that way.
+    for (const node of Array.from(e.childNodes)) {
+      const child = node as Element;
+      if (child.nodeType !== 1 || child.namespaceURI !== W) continue;
+      if (child.localName === 'br') { out.push({ type: 'hardBreak' }); continue; }
+      if (child.localName !== 't') continue;
+      const text = child.textContent ?? '';
+      if (!text) continue;
+      out.push(marks.length ? { type: 'text', text, marks } : { type: 'text', text });
+    }
   }
 
   return out;
@@ -221,6 +228,37 @@ const inlineNodes = (p: Element, ctx: InlineCtx, linkHref?: string): Record<stri
  */
 const MAX_GLUED_HEADING = 45;
 const MIN_GLUED_BODY = 40;
+
+/** A heading separated from its body by a line break rather than a paragraph
+ *  mark, inside one `w:p`:
+ *
+ *    <w:r><w:rPr><w:b/></w:rPr><w:t>Styrkelse af det primære sundhedsvæsen</w:t></w:r>
+ *    <w:r><w:br/><w:t>Den kommende sundhedsreform …</w:t></w:r>
+ *
+ *  56 paragraphs across three documents are written this way, and unlike the
+ *  glued case below it is not confined to kerneopgave subsections — section 4
+ *  uses it for headings with free-form names. The break is the author's own
+ *  signal that the bold text ends a line, so the structure is the gate here and
+ *  no name matching is needed. */
+const MAX_BREAK_HEADING = 90;
+const splitHeadingBeforeBreak = (
+  content: Record<string, unknown>[]
+): { heading: string; rest: Record<string, unknown>[] } | null => {
+  const [lead, brk, ...rest] = content;
+  if (!lead || !brk || rest.length === 0) return null;
+  if (lead.type !== 'text' || brk.type !== 'hardBreak') return null;
+  const marks = (lead.marks ?? []) as Array<{ type?: string }>;
+  if (!marks.some(m => m?.type === 'bold')) return null;
+  const heading = String(lead.text ?? '').trim();
+  if (!heading || heading.length > MAX_BREAK_HEADING) return null;
+  const bodyText = rest
+    .map(n => (n.type === 'text' ? String(n.text ?? '') : ''))
+    .join('')
+    .trim();
+  if (bodyText.length < MIN_GLUED_BODY) return null;
+  return { heading, rest };
+};
+
 const splitGluedHeading = (
   content: Record<string, unknown>[],
   looksLikeHeading: (text: string) => boolean
@@ -279,7 +317,8 @@ export const parseBody = (
     if (!text && content.length === 0) continue;
 
     if (!level) {
-      const glued = splitGluedHeading(content, boldLooksLikeHeading);
+      const glued =
+        splitHeadingBeforeBreak(content) ?? splitGluedHeading(content, boldLooksLikeHeading);
       if (glued) {
         blocks.push({
           level: 4,
