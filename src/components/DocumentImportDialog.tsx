@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, FileUp, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -177,11 +177,13 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [canWriteKerneopgaver, setCanWriteKerneopgaver] = useState(true);
   const { toast } = useToast();
 
   const loadTemplates = async () => {
     if (templates.length > 0) return;
+    setIsLoadingTemplates(true);
     try {
       setTemplates(await templateService.getTemplates());
     } catch (error) {
@@ -190,8 +192,27 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
         description: errorMessage(error, 'Skabelonerne kunne ikke hentes'),
         variant: 'destructive',
       });
+    } finally {
+      setIsLoadingTemplates(false);
     }
   };
+
+  // Load when the dialog opens.
+  //
+  // Radix's Dialog onOpenChange fires only when the *dialog* asks to change
+  // state — Escape, an overlay click, the close button. It never fires when the
+  // parent flips `open` to true, which is how this dialog is opened, so hanging
+  // the fetch off it meant the list was never loaded and the picker was simply
+  // empty with no error. The `open` prop is the signal that actually changes.
+  useEffect(() => {
+    if (!open) return;
+    loadTemplates();
+    // Seed the default only while nothing is chosen: the versions list can
+    // refresh underneath the dialog, and overwriting a live choice would be
+    // worse than leaving it blank.
+    setTemplateId(current => current || currentTemplateId || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, currentTemplateId]);
 
   const reset = () => {
     setFile(null);
@@ -202,7 +223,6 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
 
   const handleOpenChange = (value: boolean) => {
     if (!value) reset();
-    else loadTemplates();
     onOpenChange(value);
   };
 
@@ -375,6 +395,18 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {/* The two failure modes — never fetched, and fetched but
+                    empty — looked identical on screen, which is what made the
+                    bug above take a report to find. Say which one it is. */}
+                {isLoadingTemplates && (
+                  <p className="text-xs text-muted-foreground">Henter skabeloner…</p>
+                )}
+                {!isLoadingTemplates && templates.length === 0 && (
+                  <p className="text-xs text-destructive">
+                    Ingen skabeloner fundet. Kontrollér at skabelon-migrationerne
+                    er kørt.
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Dokumenter med afsnittet “Intern medicin” skal bruge
                   intern medicin-skabelonen. Vælges den forkerte skabelon, vil
