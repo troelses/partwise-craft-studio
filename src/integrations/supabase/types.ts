@@ -312,23 +312,35 @@ export type Database = {
       }
       kerneopgave_sections: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           draft_content: Json | null
           id: string
+          is_approved: boolean
           kerneopgave_id: string
+          published_content: Json | null
           section_type: string
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           draft_content?: Json | null
           id?: string
+          is_approved?: boolean
           kerneopgave_id: string
+          published_content?: Json | null
           section_type: string
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           draft_content?: Json | null
           id?: string
+          is_approved?: boolean
           kerneopgave_id?: string
+          published_content?: Json | null
           section_type?: string
           updated_at?: string
         }
