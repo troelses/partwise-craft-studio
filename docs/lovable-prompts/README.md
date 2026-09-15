@@ -29,6 +29,7 @@ and the schema is simply unchanged.
 | 15 | `15-docx-import-write.md` | .docx import part 2: import dialog, write path, and the permissions migration it needs |
 | 16 | `16-import-dialog-template-list.md` | Fix: the import dialog's template picker was never populated |
 | 17 | `17-templates-readable.md` | Fix: `templates` had RLS on with no SELECT policy, so no user could list templates |
+| 18 | `18-ambulant-leadin-and-empty-sections.md` | Ambulant subsection, kerneopgave lead-in text, and hiding empty sections in view mode |
 
 ## Order to apply
 
