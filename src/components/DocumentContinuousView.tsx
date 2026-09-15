@@ -15,6 +15,7 @@ import {
   fetchKerneopgaver,
 } from '@/utils/documentContent';
 import { Kerneopgave } from '@/services/kerneopgaverService';
+import { DEFAULT_TEMPLATE_ID } from '@/constants/template;
 
 interface DocumentContinuousViewProps {
   document: Document;
@@ -55,11 +56,28 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
     try {
       setIsLoading(true);
       
+      // Resolve against the document's own template, the same way the editor
+      // and documentService do. This was hardcoded to the original template, so
+      // any document on a different one matched no template_sections at all and
+      // rendered as a page of empty headings — and, once empty blocks started
+      // being hidden, as nothing whatsoever.
+      const { data: documentData, error: documentError } = await supabase
+        .from('documents')
+        .select('template_id')
+        .eq('id', document.id)
+        .single();
+
+      if (documentError) {
+        throw documentError;
+      }
+
+      const templateId = documentData?.template_id || DEFAULT_TEMPLATE_ID;
+
       // Fetch template sections
       const { data: templateData, error: templateError } = await supabase
         .from('template_sections')
         .select('*')
-        .eq('template_id', '439df5fa-9aa6-4c2f-bb71-f26fa4b29f03')
+        .eq('template_id', templateId)
         .order('position');
 
       if (templateError) {
@@ -197,6 +215,16 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
       </div>
 
       {/* Document sections */}
+      {cards.length === 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold mb-2">Dokumentet har intet indhold endnu.</h2>
+          <p className="text-gray-600">
+            Tomme afsnit vises ikke her. Skriv indhold i redigeringsvisningen, så
+            vises det.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-6">
         {cards.map((card) => (
           <div key={card[0].key} className="bg-white p-6 rounded-lg shadow-sm" id={`section-${card[0].key}`}>
