@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { documentService } from '@/services/documentService';
 import { kerneopgaverService } from '@/services/kerneopgaverService';
 import { renderRichText } from '@/utils/richTextRenderer';
+import KerneopgaveApprovalList from '@/components/KerneopgaveApprovalList';
 
 interface TeamLeadApprovalProps {
   documentId: string;
