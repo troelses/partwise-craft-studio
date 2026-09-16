@@ -310,6 +310,24 @@ export type Database = {
           },
         ]
       }
+      kerneopgave_section_labels: {
+        Row: {
+          label: string
+          position: number
+          section_type: string
+        }
+        Insert: {
+          label: string
+          position: number
+          section_type: string
+        }
+        Update: {
+          label?: string
+          position?: number
+          section_type?: string
+        }
+        Relationships: []
+      }
       kerneopgave_sections: {
         Row: {
           approved_at: string | null
