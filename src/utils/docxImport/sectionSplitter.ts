@@ -8,6 +8,7 @@ import { FOOTNOTE_NODE } from '@/utils/footnotes';
 import {
   DocxBlock, ImportPreview, ParsedKerneopgave, ParsedKerneopgaveSection, ParsedSection,
 } from './types';
+import { splitCollaborations } from './collaborations';
 
 /** Template sections the document is being matched against. Passed in rather
  *  than hardcoded, so a second template — or a third later — costs nothing. */
@@ -153,6 +154,15 @@ const splitKerneopgaver = (blocks: DocxBlock[]): ParsedKerneopgave[] => {
   }
 
   for (const it of items) {
+    // Fællesopgaver is written as a bullet per specialty in the real drafts, so
+    // it is split into an introduction and entries here rather than left as one
+    // blob. The original blocks stay on the section either way.
+    for (const section of it.sections) {
+      if (section.type === 'faellesopgaver') {
+        section.collaborations = splitCollaborations(section.blocks);
+      }
+    }
+
     if (it.sections.length === 0) {
       it.warnings.push('Ingen underafsnit fundet — er dette en kerneopgave eller blot en overskrift?');
     } else if (it.sections.length > KERNEOPGAVE_SECTION_TYPES.length) {

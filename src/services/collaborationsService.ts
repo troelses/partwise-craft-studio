@@ -113,6 +113,45 @@ export const collaborationsService = {
     return specialerCache;
   },
 
+  /** Bulk-create collaborations for an imported document, in one statement.
+   *
+   *  `specialtyId` is resolved by the caller against the canonical list; an
+   *  unmatched name is stored with a null key rather than refused, which is the
+   *  whole reason the name is the required half of the pair. */
+  async importCollaborations(
+    rows: Array<{
+      kerneopgaveSectionId: string;
+      position: number;
+      specialtyId: number | null;
+      specialtyName: string;
+      draftDescription: string;
+    }>
+  ): Promise<number> {
+    if (rows.length === 0) return 0;
+
+    const { error } = await supabase.from('kerneopgave_collaborations').insert(
+      rows.map(row => ({
+        kerneopgave_section_id: row.kerneopgaveSectionId,
+        position: row.position,
+        specialty_id: row.specialtyId,
+        specialty_name: row.specialtyName,
+        draft_description: parseContent(row.draftDescription),
+      }))
+    );
+
+    if (error) throw error;
+    return rows.length;
+  },
+
+  /** Match a written name against the canonical list, case-insensitively.
+   *  Deliberately exact rather than fuzzy: a wrong link between two specialties
+   *  is worse than no link, and an unmatched name is already a supported state
+   *  that the review screen reports. */
+  matchSpecialty(name: string, specialer: Speciale[]): number | null {
+    const wanted = name.trim().toLowerCase();
+    return specialer.find(s => s.name.trim().toLowerCase() === wanted)?.id ?? null;
+  },
+
   async add(
     kerneopgaveSectionId: string,
     specialtyName: string,

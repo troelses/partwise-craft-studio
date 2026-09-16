@@ -52,6 +52,14 @@ export interface KerneopgaveImportSection {
   draftContent: string;
 }
 
+/** What importKerneopgaver hands back. The subsection ids are what lets the
+ *  caller attach collaborations to the faellesopgaver row it just created;
+ *  `faellesopgaverSectionIds[i]` belongs to `items[i]`. */
+export interface KerneopgaveImportResult {
+  count: number;
+  faellesopgaverSectionIds: Array<string | null>;
+}
+
 /** One kerneopgave as the .docx importer produces it. */
 export interface KerneopgaveImportItem {
   title: string;
@@ -210,8 +218,8 @@ export const kerneopgaverService = {
   async importKerneopgaver(
     documentId: string,
     items: KerneopgaveImportItem[]
-  ): Promise<number> {
-    if (items.length === 0) return 0;
+  ): Promise<KerneopgaveImportResult> {
+    if (items.length === 0) return { count: 0, faellesopgaverSectionIds: [] };
 
     // Positions are assigned here rather than read back. The target is always a
     // newly created version, which has no kerneopgaver of its own, and distinct
@@ -267,13 +275,30 @@ export const kerneopgaverService = {
       }
     });
 
-    const { error: sectionError } = await supabase
+    // Select the rows back, so the caller can key collaborations to the
+    // faellesopgaver subsection it just created. Ordered by the position of the
+    // kerneopgave they belong to, so the ids line up with the items as given.
+    const { data: created, error: sectionError } = await supabase
       .from('kerneopgave_sections')
-      .insert(sectionRows);
+      .insert(sectionRows)
+      .select('id, kerneopgave_id, section_type');
 
     if (sectionError) throw sectionError;
 
-    return items.length;
+    const faellesopgaverById = new Map<string, string>();
+    for (const row of created || []) {
+      if (row.section_type === 'faellesopgaver') {
+        faellesopgaverById.set(row.kerneopgave_id, row.id);
+      }
+    }
+
+    return {
+      count: items.length,
+      faellesopgaverSectionIds: items.map((_, index) => {
+        const kerneopgaveId = idByPosition.get((index + 1) * 10) as string;
+        return faellesopgaverById.get(kerneopgaveId) ?? null;
+      }),
+    };
   },
 
   /** The kerneopgave's own text, above its subsections. */
