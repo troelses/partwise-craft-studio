@@ -69,6 +69,32 @@ export const collaborationsService = {
     return (data || []).map(toCollaboration);
   },
 
+  /** Every collaboration for a set of subsection rows, grouped by subsection.
+   *  One query for a whole document rather than one per kerneopgave: a document
+   *  has up to fifteen of them. */
+  async listForSections(
+    kerneopgaveSectionIds: string[]
+  ): Promise<Map<string, Collaboration[]>> {
+    const grouped = new Map<string, Collaboration[]>();
+    if (kerneopgaveSectionIds.length === 0) return grouped;
+
+    const { data, error } = await supabase
+      .from('kerneopgave_collaborations')
+      .select('*')
+      .in('kerneopgave_section_id', kerneopgaveSectionIds)
+      .order('position');
+
+    if (error) throw error;
+
+    for (const row of data || []) {
+      const item = toCollaboration(row);
+      const list = grouped.get(item.kerneopgaveSectionId) ?? [];
+      list.push(item);
+      grouped.set(item.kerneopgaveSectionId, list);
+    }
+    return grouped;
+  },
+
   /** The canonical specialty list. Small and unchanging, so it is fetched once
    *  per page load and shared between every kerneopgave on the document. */
   async listSpecialer(): Promise<Speciale[]> {

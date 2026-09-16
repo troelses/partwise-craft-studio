@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Collaboration } from '@/services/collaborationsService';
 import {
   KerneopgaveSectionType,
   KERNEOPGAVE_SECTION_TYPES,
@@ -23,6 +24,10 @@ export interface KerneopgaveSection {
    *  for everything written before that. */
   publishedContent: string;
   isApproved: boolean;
+  /** Only the 'faellesopgaver' subsection has these, and only when the caller
+   *  asked for them — documentContent.fetchKerneopgaver attaches them. They are
+   *  a type-only dependency here; nothing in this service reads the table. */
+  collaborations?: Collaboration[];
   updatedAt: string;
 }
 
