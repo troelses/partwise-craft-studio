@@ -52,6 +52,14 @@ export interface KerneopgaveImportSection {
   draftContent: string;
 }
 
+/** What importKerneopgaver hands back. The subsection ids are what lets the
+ *  caller attach collaborations to the faellesopgaver row it just created;
+ *  `faellesopgaverSectionIds[i]` belongs to `items[i]`. */
+export interface KerneopgaveImportResult {
+  count: number;
+  faellesopgaverSectionIds: Array<string | null>;
+}
+
 /** One kerneopgave as the .docx importer produces it. */
 export interface KerneopgaveImportItem {
   title: string;
