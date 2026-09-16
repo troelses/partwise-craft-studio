@@ -106,7 +106,7 @@ export const buildContentBlocks = (
           key: `kerneopgave-${item.id}-${type}`,
           kind: 'kerneopgaveSection',
           title: KERNEOPGAVE_SECTION_LABELS[type],
-          content: sub?.draftContent || '',
+          content: subsectionContent(sub),
           depth: 2,
         });
       }
@@ -165,7 +165,10 @@ export const blockContents = (blocks: ContentBlock[]): string[] =>
   blocks.map(block => block.content);
 
 /** Convenience for callers that have a Document and just need the blocks. */
-export const loadContentBlocks = async (document: Document): Promise<ContentBlock[]> => {
+export const loadContentBlocks = async (
+  document: Document,
+  opts?: { prefer?: 'draft' | 'published' }
+): Promise<ContentBlock[]> => {
   const kerneopgaver = await fetchKerneopgaver(document.id);
-  return buildContentBlocks(document.sections, kerneopgaver);
+  return buildContentBlocks(document.sections, kerneopgaver, opts);
 };
