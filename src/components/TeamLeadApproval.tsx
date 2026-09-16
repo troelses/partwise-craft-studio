@@ -182,21 +182,27 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
           Review and approve content changes for each section. Draft content will be published when approved.
         </p>
 
-        {pendingSections.length > 0 && (
+        {pendingSections.length + pendingSubsections > 0 && (
           <div className="mt-4 pt-4 border-t flex items-center justify-between">
             <p className="text-sm text-yellow-700">
               <strong>{pendingSections.length}</strong>{' '}
-              {pendingSections.length === 1 ? 'section is' : 'sections are'} waiting
-              for approval.
+              {pendingSections.length === 1 ? 'section' : 'sections'}
+              {pendingSubsections > 0 && (
+                <>
+                  {' '}and <strong>{pendingSubsections}</strong> kerneopgave{' '}
+                  {pendingSubsections === 1 ? 'subsection' : 'subsections'}
+                </>
+              )}{' '}
+              waiting for approval.
             </p>
             <Button
               onClick={() => setConfirmAllOpen(true)}
-              disabled={bulkProgress !== null || isApproving !== null}
+              disabled={isApprovingAll || isApproving !== null}
               className="bg-green-600 hover:bg-green-700"
             >
-              {bulkProgress
-                ? `Approving ${bulkProgress.done} of ${bulkProgress.total}…`
-                : `Approve all (${pendingSections.length})`}
+              {isApprovingAll
+                ? 'Approving…'
+                : `Approve all (${pendingSections.length + pendingSubsections})`}
             </Button>
           </div>
         )}
@@ -205,15 +211,21 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Approve all {pendingSections.length}{' '}
-                {pendingSections.length === 1 ? 'section' : 'sections'}?
+                Approve {pendingSections.length}{' '}
+                {pendingSections.length === 1 ? 'section' : 'sections'}
+                {pendingSubsections > 0 &&
+                  ` and ${pendingSubsections} kerneopgave ${
+                    pendingSubsections === 1 ? 'subsection' : 'subsections'
+                  }`}
+                ?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Each section&apos;s draft becomes the published version, replacing what is
+                Each draft becomes the published version, replacing what is
                 published today, and the result is what everyone else sees and what
-                Ask AI reads. Sections with no draft, and sections already approved,
-                are left alone. This cannot be undone from here — the previous
-                published text is overwritten.
+                Ask AI reads. Anything with no draft, and anything already approved,
+                is left alone. It runs as one transaction, so either all of it
+                publishes or none of it does. This cannot be undone from here — the
+                previous published text is overwritten.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
