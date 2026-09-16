@@ -85,7 +85,7 @@ import { z as z2 } from "npm:zod@^3.25.76";
 var search_documents_default = defineTool2({
   name: "search_documents",
   title: "Search documents",
-  description: "Full-text search the approved document text for a word or phrase. Returns matching document ids, titles and match counts.",
+  description: "Full-text search the approved document text for a word or phrase, including the kerneopgaver in section 2.2/2.3 and their titles. Returns matching document ids, titles and match counts.",
   inputSchema: { search_term: z2.string().trim().min(1).describe("Word or phrase to search for.") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ search_term }, ctx) => {
@@ -154,7 +154,7 @@ import { z as z5 } from "npm:zod@^3.25.76";
 var get_document_text_default = defineTool5({
   name: "get_document_text",
   title: "Get document text",
-  description: "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' \u2014 treat those as footnotes, not as running prose.",
+  description: "Get the full approved text of one document by id, section by section. Find the id with find_documents_by_title, search_documents or list_documents first. Kerneopgaver appear as their own rows, titled '<section> > <kerneopgave> > <subsection>', in place rather than at the end \u2014 that is section 2.2 or 2.3 and usually the largest part of the document. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' \u2014 treat those as footnotes, not as running prose.",
   inputSchema: { doc_id: z5.string().uuid().describe("The document id.") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ doc_id }, ctx) => {

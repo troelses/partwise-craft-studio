@@ -17,7 +17,8 @@ const functionDeclarations = [
   },
   {
     name: "search_documents",
-    description: "Find which documents contain a word/phrase. Returns document ids, titles and match counts.",
+    description:
+      "Find which documents contain a word/phrase. Searches the approved text of every section, including the kerneopgaver in section 2.2/2.3 and their titles. Returns document ids, titles and match counts.",
     parameters: { type: "object", properties: { search_term: { type: "string" } }, required: ["search_term"] },
   },
   {
@@ -39,7 +40,7 @@ const functionDeclarations = [
   {
     name: "get_document_text",
     description:
-      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
+      "Get the full approved text of one document by id, section by section. Use to read or compare specific documents. Kerneopgaver appear as their own rows, titled '<section> > <kerneopgave> > <subsection>', in place rather than at the end — that is section 2.2 or 2.3 and usually the largest part of the document. Any footnotes appear at the end of a section's body as '[FN: ... | ...]', separated by ' | ' — treat those as footnotes, not as running prose.",
     parameters: { type: "object", properties: { doc_id: { type: "string" } }, required: ["doc_id"] },
   },
 ];

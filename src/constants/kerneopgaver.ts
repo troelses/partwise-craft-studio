@@ -8,6 +8,11 @@
  * it impossible to run outside a browser session.
  *
  * kerneopgaverService re-exports these, so existing imports keep working.
+ *
+ * The labels are also held in the `kerneopgave_section_labels` table, which is
+ * what get_document_text joins to name a subsection for the AI. That table is
+ * the source of truth: adding a subsection means a migration inserting its row
+ * AND an entry here, and the two must agree.
  */
 
 export type KerneopgaveSectionType =
