@@ -18,6 +18,11 @@ export interface KerneopgaveSection {
   kerneopgaveId: string;
   sectionType: KerneopgaveSectionType;
   draftContent: string;
+  /** The approved text, empty until the subsection has been approved. Section
+   *  2.2 only became publishable in migration 20260917090000, so this is empty
+   *  for everything written before that. */
+  publishedContent: string;
+  isApproved: boolean;
   updatedAt: string;
 }
 
@@ -82,6 +87,8 @@ export const kerneopgaverService = {
         kerneopgaveId: s.kerneopgave_id,
         sectionType: s.section_type as KerneopgaveSectionType,
         draftContent: s.draft_content ? JSON.stringify(s.draft_content) : '',
+        publishedContent: s.published_content ? JSON.stringify(s.published_content) : '',
+        isApproved: !!s.is_approved,
         updatedAt: s.updated_at,
       })),
     }));
@@ -129,6 +136,8 @@ export const kerneopgaverService = {
         kerneopgaveId: (k as any).id,
         sectionType,
         draftContent: '',
+        publishedContent: '',
+        isApproved: false,
         updatedAt: new Date().toISOString(),
       })),
     };
