@@ -310,6 +310,66 @@ export type Database = {
           },
         ]
       }
+      kerneopgave_collaborations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          draft_description: Json | null
+          id: string
+          is_approved: boolean
+          kerneopgave_section_id: string
+          position: number
+          published_description: Json | null
+          specialty_id: number | null
+          specialty_name: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          draft_description?: Json | null
+          id?: string
+          is_approved?: boolean
+          kerneopgave_section_id: string
+          position?: number
+          published_description?: Json | null
+          specialty_id?: number | null
+          specialty_name: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          draft_description?: Json | null
+          id?: string
+          is_approved?: boolean
+          kerneopgave_section_id?: string
+          position?: number
+          published_description?: Json | null
+          specialty_id?: number | null
+          specialty_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kerneopgave_collaborations_kerneopgave_section_id_fkey"
+            columns: ["kerneopgave_section_id"]
+            isOneToOne: false
+            referencedRelation: "kerneopgave_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kerneopgave_collaborations_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialer"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kerneopgave_section_labels: {
         Row: {
           label: string
@@ -694,6 +754,7 @@ export type Database = {
       approve_document: {
         Args: { doc_id: string }
         Returns: {
+          collaborations_approved: number
           kerneopgave_sections_approved: number
           sections_approved: number
         }[]
