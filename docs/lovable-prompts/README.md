@@ -39,6 +39,7 @@ and the schema is simply unchanged.
 | 25 | `25-approve-document.md` | Atomic approve_document across both tables, replacing the client loop (Stage C) |
 | 26 | `26-kerneopgaver-in-search-and-ai.md` | Kerneopgaver and their titles reach search and Ask AI (Stage D) |
 | 27 | `27-kerneopgaver-in-view-export-and-dashboard.md` | Read view, approved export and approval dashboard cover section 2.2 (Stage E) |
+| 28 | `28-guard-section-publish-on-insert.md` | Close the INSERT hole in the document_sections publish guard (independent) |
 
 ## Order to apply
 
@@ -77,7 +78,7 @@ thirteen.
 
 Prompts 1–21 and every migration have been applied. **Prompts 23–27 are outstanding**
 (22 is applied). 23–27 are the five stages of `kerneopgaver-approval-scope.md` and
-must go in that order.
+must go in that order. 28 is independent and can go in at any point.
 
 Lovable records applied SQL under its own generated filenames
 (`20260908133355_…`, `20260915083237_…` and so on), not under the names used in

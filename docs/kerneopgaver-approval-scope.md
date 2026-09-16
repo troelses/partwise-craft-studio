@@ -85,8 +85,8 @@ not null default false`, `approved_by uuid`, `approved_at timestamptz`.
 The trigger guards INSERT as well as UPDATE. **`document_sections` is still
 guarded on UPDATE only**, so a writer can create a row there with
 `published_content` already set — a pre-existing hole, left open deliberately
-because tightening a table this work does not otherwise touch is a separate
-decision. Worth closing at some point.
+because tightening a table this work does not otherwise touch was a separate
+decision. **Since closed, as prompt 28.**
 
 **A publish guard trigger is required, not optional.** `document_sections` has
 `guard_section_publish_trg`, which blocks a non-approver from writing
