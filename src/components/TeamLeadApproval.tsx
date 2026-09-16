@@ -116,33 +116,35 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
 
   const handleApproveAll = async () => {
     setConfirmAllOpen(false);
-    setBulkProgress({ done: 0, total: pendingSections.length });
+    setIsApprovingAll(true);
     try {
-      const { approved, error } = await documentService.approveSections(
-        pendingSections.map(section => section.id),
-        (done, total) => setBulkProgress({ done, total })
-      );
+      const { sections: approvedSections, kerneopgaveSections } =
+        await documentService.approveDocument(documentId);
 
-      if (error) {
-        toast({
-          title: approved > 0 ? 'Partially approved' : 'Approval failed',
-          description:
-            approved > 0
-              ? `${approved} of ${pendingSections.length} sections were approved before it stopped: ${error}`
-              : error,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: `${approved} ${approved === 1 ? 'section was' : 'sections were'} approved and published.`,
-        });
-      }
+      toast({
+        title: 'Success',
+        description:
+          `${approvedSections} ${approvedSections === 1 ? 'section' : 'sections'} and ` +
+          `${kerneopgaveSections} kerneopgave ` +
+          `${kerneopgaveSections === 1 ? 'subsection' : 'subsections'} ` +
+          'were approved and published.',
+      });
 
       await fetchSectionsForApproval();
       onApprovalChange?.();
+    } catch (error) {
+      // One transaction: if this failed, nothing was published, so there is no
+      // partial state to explain or clean up.
+      toast({
+        title: 'Approval failed',
+        description:
+          error instanceof Error && error.message
+            ? `${error.message}. Nothing was published.`
+            : 'Nothing was published.',
+        variant: 'destructive',
+      });
     } finally {
-      setBulkProgress(null);
+      setIsApprovingAll(false);
     }
   };
 
