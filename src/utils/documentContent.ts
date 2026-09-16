@@ -6,6 +6,7 @@ import {
   KERNEOPGAVE_SECTION_TYPES,
   kerneopgaverService,
 } from '@/services/kerneopgaverService';
+import { Collaboration, collaborationsService } from '@/services/collaborationsService';
 
 /**
  * One flat, ordered view of everything a document contains.
@@ -39,11 +40,100 @@ export interface ContentBlock {
  *  failure here degrades to "2.2 looks empty" instead of breaking the export. */
 export const fetchKerneopgaver = async (documentId: string): Promise<Kerneopgave[]> => {
   try {
-    return await kerneopgaverService.getKerneopgaver(documentId);
+    const kerneopgaver = await kerneopgaverService.getKerneopgaver(documentId);
+
+    // The collaborating specialties under 'faellesopgaver' are rows of their
+    // own. Fetched in one query for the whole document and attached here, so
+    // every consumer of this list — read view and both exporters — gets them
+    // without knowing the table exists.
+    const sectionIds = kerneopgaver
+      .flatMap(item => item.sections)
+      .filter(section => section.sectionType === 'faellesopgaver')
+      .map(section => section.id)
+      .filter(Boolean);
+
+    const grouped = await collaborationsService.listForSections(sectionIds);
+    for (const item of kerneopgaver) {
+      for (const section of item.sections) {
+        if (section.sectionType === 'faellesopgaver') {
+          section.collaborations = grouped.get(section.id) ?? [];
+        }
+      }
+    }
+
+    return kerneopgaver;
   } catch (error) {
     console.error('Error loading kerneopgaver for document content:', error);
     return [];
   }
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type InlineNode = Record<string, any>;
+
+const parseDoc = (json: string): { content?: InlineNode[] } | null => {
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Turn the collaboration rows into the bullet list the source documents write by
+ * hand: "**Speciale**: hvordan det er relevant".
+ *
+ * Built as TipTap content rather than as its own block kind so that everything
+ * downstream — the renderer, both exporters, footnote numbering — handles it
+ * with no change at all. The description's inline nodes are reused rather than
+ * flattened, which is what keeps the footnotes inside them working.
+ *
+ * An item with no description still renders: the specialty name is the point of
+ * the row, and 15 of the items in the real drafts are exactly that.
+ */
+const collaborationsToList = (
+  items: Collaboration[],
+  preferPublished: boolean
+): InlineNode | null => {
+  if (items.length === 0) return null;
+
+  const listItems = items.map(item => {
+    const json = preferPublished
+      ? item.publishedDescription || item.draftDescription
+      : item.draftDescription;
+    const paragraphs = (parseDoc(json)?.content ?? []) as Array<{ content?: InlineNode[] }>;
+
+    const label: InlineNode[] = [
+      { type: 'text', text: item.specialtyName, marks: [{ type: 'bold' }] },
+    ];
+    const [first, ...rest] = paragraphs;
+    if (first?.content?.length) label.push({ type: 'text', text: ': ' }, ...first.content);
+
+    return {
+      type: 'listItem',
+      content: [{ type: 'paragraph', content: label }, ...rest],
+    };
+  });
+
+  return { type: 'bulletList', content: listItems };
+};
+
+/** The subsection's own rich text is the introduction; the list follows it in
+ *  the same block, so an empty introduction with items still renders. */
+const withCollaborations = (
+  introJson: string,
+  items: Collaboration[] | undefined,
+  preferPublished: boolean
+): string => {
+  const list = collaborationsToList(items ?? [], preferPublished);
+  if (!list) return introJson;
+
+  const intro = parseDoc(introJson);
+  return JSON.stringify({
+    type: 'doc',
+    content: [...((intro?.content as InlineNode[]) ?? []), list],
+  });
 };
 
 /**
@@ -106,7 +196,10 @@ export const buildContentBlocks = (
           key: `kerneopgave-${item.id}-${type}`,
           kind: 'kerneopgaveSection',
           title: KERNEOPGAVE_SECTION_LABELS[type],
-          content: subsectionContent(sub),
+          content:
+            type === 'faellesopgaver'
+              ? withCollaborations(subsectionContent(sub), sub?.collaborations, preferPublished)
+              : subsectionContent(sub),
           depth: 2,
         });
       }
