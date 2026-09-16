@@ -32,6 +32,8 @@ import {
   ImportPreview,
   ParsedKerneopgave,
 } from '@/utils/docxImport/types';
+import { ParsedCollaboration } from '@/utils/docxImport/collaborations';
+import { collaborationsService, Speciale } from '@/services/collaborationsService';
 import {
   KERNEOPGAVE_SECTION_LABELS,
   KerneopgaveSectionType,
@@ -111,9 +113,17 @@ const headingBlock = (text: string): DocxBlock => ({
  */
 const buildKerneopgavePayload = (
   kerneopgaver: ParsedKerneopgave[]
-): { items: KerneopgaveImportItem[]; fallbackBlocks: DocxBlock[] } => {
+): {
+  items: KerneopgaveImportItem[];
+  fallbackBlocks: DocxBlock[];
+  /** Aligned with `items`: the collaborating specialties parsed out of each
+   *  item's Fællesopgaver subsection. They cannot be written until the
+   *  subsection rows exist, so they travel alongside rather than inside. */
+  collaborations: ParsedCollaboration[][];
+} => {
   const items: KerneopgaveImportItem[] = [];
   const fallbackBlocks: DocxBlock[] = [];
+  const collaborations: ParsedCollaboration[][] = [];
 
   for (const item of kerneopgaver) {
     if (item.sections.length === 0) {
@@ -122,8 +132,23 @@ const buildKerneopgavePayload = (
     }
 
     const byType = new Map<KerneopgaveSectionType, DocxBlock[]>();
+    const parsedCollaborations: ParsedCollaboration[] = [];
+
     for (const section of item.sections) {
-      byType.set(section.type, [...(byType.get(section.type) ?? []), ...section.blocks]);
+      // Fællesopgaver contributes only its introduction to the subsection text;
+      // the specialties become rows of their own. Anything the splitter could
+      // not read as an entry stays with the introduction rather than being
+      // dropped — it is prose, and the review screen lists it.
+      const blocks =
+        section.type === 'faellesopgaver' && section.collaborations
+          ? [...section.collaborations.intro, ...section.collaborations.unparsed]
+          : section.blocks;
+
+      if (section.type === 'faellesopgaver' && section.collaborations) {
+        parsedCollaborations.push(...section.collaborations.items);
+      }
+
+      byType.set(section.type, [...(byType.get(section.type) ?? []), ...blocks]);
     }
 
     items.push({
@@ -138,9 +163,29 @@ const buildKerneopgavePayload = (
         draftContent: blocksToJson(blocks),
       })),
     });
+    collaborations.push(parsedCollaborations);
   }
 
-  return { items, fallbackBlocks };
+  return { items, fallbackBlocks, collaborations };
+};
+
+/** What the Fællesopgaver subsection of one kerneopgave will turn into, for the
+ *  review screen. Worth showing because the split is a judgement: 90% of the
+ *  paragraphs in the real drafts read ": hvordan", but the rest are
+ *  prose, and a human should see which is which before anything is written. */
+const collaborationSummary = (item: ParsedKerneopgave): string | null => {
+  const section = item.sections.find(s => s.type === 'faellesopgaver');
+  const parsed = section?.collaborations;
+  if (!parsed || parsed.items.length === 0) return null;
+
+  const names = parsed.items.map(entry => entry.specialtyName);
+  const shown = names.slice(0, 4).join(', ');
+  const rest = names.length > 4 ? ` +${names.length - 4} flere` : '';
+  const unparsed = parsed.unparsed.length
+    ? ` · ${parsed.unparsed.length} afsnit kunne ikke læses som et speciale og bliver i indledningen`
+    : '';
+
+  return `${names.length} samarbejdende specialer: ${shown}${rest}${unparsed}`;
 };
 
 /** Items the parser produced that will not become kerneopgaver, and items whose
