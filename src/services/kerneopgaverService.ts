@@ -271,6 +271,35 @@ export const kerneopgaverService = {
     if (error) throw error;
   },
 
+  /** How many kerneopgave subsections are waiting for approval, so the dashboard
+   *  can say what "approve all" is about to publish. Counts the same rows
+   *  approve_document will touch: draft present, not currently approved.
+   *
+   *  Two queries rather than one embedded filter, and the pending test applied
+   *  here rather than as PostgREST filters: both `kerneopgaver!inner(...)` and a
+   *  head/count query with three chained filters make the generated types
+   *  recurse deep enough that tsc gives up. The row counts are in the hundreds,
+   *  so filtering client-side costs nothing. */
+  async countPendingSubsections(documentId: string): Promise<number> {
+    const { data: items, error: itemsError } = await supabase
+      .from('kerneopgaver')
+      .select('id')
+      .eq('document_id', documentId);
+
+    if (itemsError) throw itemsError;
+    const ids = (items || []).map(item => item.id);
+    if (ids.length === 0) return 0;
+
+    const { data: rows, error } = await supabase
+      .from('kerneopgave_sections')
+      .select('id, draft_content, is_approved')
+      .in('kerneopgave_id', ids);
+
+    if (error) throw error;
+
+    return (rows || []).filter(row => row.draft_content !== null && !row.is_approved).length;
+  },
+
   async updateKerneopgaveTitle(id: string, title: string): Promise<void> {
     const { error } = await supabase
       .from('kerneopgaver')

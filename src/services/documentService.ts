@@ -626,38 +626,36 @@ export const documentService = {
     }
   },
 
-  // Approve several sections in order.
+  // Approve every pending section of a document — ordinary sections and
+  // kerneopgave subsections alike — in one transaction.
   //
-  // There is no bulk RPC and approve_section is SECURITY DEFINER with its own
-  // permission check, so each section is a separate call. It stops at the first
-  // failure: the check is per document, so a refusal on one section refuses
-  // every other one too, and carrying on would only produce a run of identical
-  // errors. Sections approved before the failure stay approved, and re-running
-  // skips them because they are no longer pending.
-  approveSections: async (
-    sectionIds: string[],
-    onProgress?: (done: number, total: number) => void
-  ): Promise<{ approved: number; error: string | null }> => {
-    let approved = 0;
+  // This replaces a client-side loop over approve_section. The loop could not be
+  // atomic, so a failure part-way left some sections published and the rest not.
+  // approve_document commits entirely or not at all, which is also what lets it
+  // cover kerneopgaver: approve_section cannot reach them, because it resolves
+  // its argument in document_sections.
+  //
+  // Returns the counts it approved. Re-running is a no-op: nothing is pending.
+  approveDocument: async (
+    documentId: string
+  ): Promise<{ sections: number; kerneopgaveSections: number }> => {
+    const { data, error } = await supabase.rpc('approve_document', {
+      doc_id: documentId,
+    });
 
-    for (const sectionId of sectionIds) {
-      const { data, error } = await supabase.rpc('approve_section', {
-        section_id: sectionId,
-      });
-
-      if (error) {
-        console.error('Error approving section:', error);
-        return { approved, error: error.message };
-      }
-      if (data !== true) {
-        return { approved, error: 'Sektionen kunne ikke findes.' };
-      }
-
-      approved++;
-      onProgress?.(approved, sectionIds.length);
+    if (error) {
+      console.error('Error approving document:', error);
+      throw error;
     }
 
-    return { approved, error: null };
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { sections_approved?: number; kerneopgave_sections_approved?: number }
+      | null;
+
+    return {
+      sections: row?.sections_approved ?? 0,
+      kerneopgaveSections: row?.kerneopgave_sections_approved ?? 0,
+    };
   },
 
   assignTeamLead: async (
