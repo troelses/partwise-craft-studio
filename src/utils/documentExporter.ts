@@ -283,7 +283,7 @@ export const exportToWord = async (
   variant: ExportVariant = 'draft'
 ) => {
   try {
-    const blocks = await buildBlocks(document);
+    const blocks = await buildBlocks(document, variant);
     const numbering = buildNumbering(blockContents(blocks));
     const ctx: WordCtx = { footnotes: {}, numbering };
 
@@ -408,7 +408,7 @@ export const exportToPDF = async (
   variant: ExportVariant = 'draft'
 ) => {
   try {
-    const blocks = await buildBlocks(document);
+    const blocks = await buildBlocks(document, variant);
     const contents = blockContents(blocks);
     const numbering = buildNumbering(contents);
     const entries = collectFootnotes(contents);
