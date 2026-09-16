@@ -673,6 +673,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_document: {
+        Args: { doc_id: string }
+        Returns: {
+          kerneopgave_sections_approved: number
+          sections_approved: number
+        }[]
+      }
       approve_section: { Args: { section_id: string }; Returns: boolean }
       can_approve_document: {
         Args: { doc_id: string; uid: string }
