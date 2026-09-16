@@ -1,4 +1,5 @@
 import { NoteRun } from '@/utils/footnotes';
+import { ParsedCollaborations } from './collaborations';
 import { KerneopgaveSectionType } from '@/constants/kerneopgaver';
 
 /**
@@ -46,6 +47,10 @@ export interface ParsedKerneopgaveSection {
   /** Similarity of sourceHeading to the canonical name, 0–1. */
   confidence: number;
   blocks: DocxBlock[];
+  /** Only on 'faellesopgaver': the blocks split into an introduction and one
+   *  entry per collaborating specialty. `blocks` still holds the original
+   *  paragraphs, so nothing depends on this being present. */
+  collaborations?: ParsedCollaborations;
 }
 
 export interface ParsedKerneopgave {
