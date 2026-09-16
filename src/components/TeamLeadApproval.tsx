@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { documentService } from '@/services/documentService';
+import { kerneopgaverService } from '@/services/kerneopgaverService';
 import { renderRichText } from '@/utils/richTextRenderer';
 
 interface TeamLeadApprovalProps {
@@ -51,8 +52,11 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState<string | null>(null);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-  // { done, total } while a bulk approval is running, otherwise null.
-  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [isApprovingAll, setIsApprovingAll] = useState(false);
+  // Kerneopgave subsections waiting for approval. They are not listed in this
+  // dashboard yet, but approve_document publishes them, so the count must be
+  // shown or the button would understate what it is about to do.
+  const [pendingSubsections, setPendingSubsections] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,6 +68,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
       setIsLoading(true);
       const data = await documentService.getDocumentSectionsForApproval(documentId);
       setSections(data);
+      setPendingSubsections(await kerneopgaverService.countPendingSubsections(documentId));
     } catch (error) {
       console.error('Error fetching sections for approval:', error);
       toast({
