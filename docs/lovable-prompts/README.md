@@ -42,6 +42,7 @@ and the schema is simply unchanged.
 | 28 | `28-guard-section-publish-on-insert.md` | Close the INSERT hole in the document_sections publish guard (independent) |
 | 29 | `29-kerneopgave-collaborations-table.md` | Structured Fællesopgaver: the table, its guard, approve_document (Stage F) |
 | 30 | `30-collaborations-editor.md` | Structured Fællesopgaver: the list editor and specialty picker (Stage G) |
+| 31 | `31-collaborations-in-view-and-search.md` | Structured Fællesopgaver: read view, export, search and Ask AI (Stage H) |
 
 ## Order to apply
 
@@ -78,8 +79,8 @@ thirteen.
 
 ## Status
 
-Prompts 1–28 and every migration have been applied. **Prompts 29 and 30 are
-outstanding**, in that order, with the types regenerated between them.
+Prompts 1–28 and every migration have been applied. **Prompts 29, 30 and 31 are
+outstanding**, in that order, with the types regenerated after 29.
 must go in that order. 28 is independent and can go in at any point.
 
 Lovable records applied SQL under its own generated filenames
