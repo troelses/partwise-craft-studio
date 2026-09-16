@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { documentService } from '@/services/documentService';
+import { kerneopgaverService } from '@/services/kerneopgaverService';
 import { renderRichText } from '@/utils/richTextRenderer';
 
 interface TeamLeadApprovalProps {
@@ -51,8 +52,11 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState<string | null>(null);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-  // { done, total } while a bulk approval is running, otherwise null.
-  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [isApprovingAll, setIsApprovingAll] = useState(false);
+  // Kerneopgave subsections waiting for approval. They are not listed in this
+  // dashboard yet, but approve_document publishes them, so the count must be
+  // shown or the button would understate what it is about to do.
+  const [pendingSubsections, setPendingSubsections] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,6 +68,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
       setIsLoading(true);
       const data = await documentService.getDocumentSectionsForApproval(documentId);
       setSections(data);
+      setPendingSubsections(await kerneopgaverService.countPendingSubsections(documentId));
     } catch (error) {
       console.error('Error fetching sections for approval:', error);
       toast({
@@ -111,33 +116,35 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
 
   const handleApproveAll = async () => {
     setConfirmAllOpen(false);
-    setBulkProgress({ done: 0, total: pendingSections.length });
+    setIsApprovingAll(true);
     try {
-      const { approved, error } = await documentService.approveSections(
-        pendingSections.map(section => section.id),
-        (done, total) => setBulkProgress({ done, total })
-      );
+      const { sections: approvedSections, kerneopgaveSections } =
+        await documentService.approveDocument(documentId);
 
-      if (error) {
-        toast({
-          title: approved > 0 ? 'Partially approved' : 'Approval failed',
-          description:
-            approved > 0
-              ? `${approved} of ${pendingSections.length} sections were approved before it stopped: ${error}`
-              : error,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: `${approved} ${approved === 1 ? 'section was' : 'sections were'} approved and published.`,
-        });
-      }
+      toast({
+        title: 'Success',
+        description:
+          `${approvedSections} ${approvedSections === 1 ? 'section' : 'sections'} and ` +
+          `${kerneopgaveSections} kerneopgave ` +
+          `${kerneopgaveSections === 1 ? 'subsection' : 'subsections'} ` +
+          'were approved and published.',
+      });
 
       await fetchSectionsForApproval();
       onApprovalChange?.();
+    } catch (error) {
+      // One transaction: if this failed, nothing was published, so there is no
+      // partial state to explain or clean up.
+      toast({
+        title: 'Approval failed',
+        description:
+          error instanceof Error && error.message
+            ? `${error.message}. Nothing was published.`
+            : 'Nothing was published.',
+        variant: 'destructive',
+      });
     } finally {
-      setBulkProgress(null);
+      setIsApprovingAll(false);
     }
   };
 
@@ -175,21 +182,27 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
           Review and approve content changes for each section. Draft content will be published when approved.
         </p>
 
-        {pendingSections.length > 0 && (
+        {pendingSections.length + pendingSubsections > 0 && (
           <div className="mt-4 pt-4 border-t flex items-center justify-between">
             <p className="text-sm text-yellow-700">
               <strong>{pendingSections.length}</strong>{' '}
-              {pendingSections.length === 1 ? 'section is' : 'sections are'} waiting
-              for approval.
+              {pendingSections.length === 1 ? 'section' : 'sections'}
+              {pendingSubsections > 0 && (
+                <>
+                  {' '}and <strong>{pendingSubsections}</strong> kerneopgave{' '}
+                  {pendingSubsections === 1 ? 'subsection' : 'subsections'}
+                </>
+              )}{' '}
+              waiting for approval.
             </p>
             <Button
               onClick={() => setConfirmAllOpen(true)}
-              disabled={bulkProgress !== null || isApproving !== null}
+              disabled={isApprovingAll || isApproving !== null}
               className="bg-green-600 hover:bg-green-700"
             >
-              {bulkProgress
-                ? `Approving ${bulkProgress.done} of ${bulkProgress.total}…`
-                : `Approve all (${pendingSections.length})`}
+              {isApprovingAll
+                ? 'Approving…'
+                : `Approve all (${pendingSections.length + pendingSubsections})`}
             </Button>
           </div>
         )}
@@ -198,15 +211,21 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Approve all {pendingSections.length}{' '}
-                {pendingSections.length === 1 ? 'section' : 'sections'}?
+                Approve {pendingSections.length}{' '}
+                {pendingSections.length === 1 ? 'section' : 'sections'}
+                {pendingSubsections > 0 &&
+                  ` and ${pendingSubsections} kerneopgave ${
+                    pendingSubsections === 1 ? 'subsection' : 'subsections'
+                  }`}
+                ?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Each section&apos;s draft becomes the published version, replacing what is
+                Each draft becomes the published version, replacing what is
                 published today, and the result is what everyone else sees and what
-                Ask AI reads. Sections with no draft, and sections already approved,
-                are left alone. This cannot be undone from here — the previous
-                published text is overwritten.
+                Ask AI reads. Anything with no draft, and anything already approved,
+                is left alone. It runs as one transaction, so either all of it
+                publishes or none of it does. This cannot be undone from here — the
+                previous published text is overwritten.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -240,7 +259,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
                   {section.draft_content && !section.is_approved && (
                     <Button
                       onClick={() => handleApproveSection(section.id)}
-                      disabled={isApproving === section.id || bulkProgress !== null}
+                      disabled={isApproving === section.id || isApprovingAll}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                     >
