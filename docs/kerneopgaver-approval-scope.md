@@ -109,7 +109,9 @@ improvement — the loop's partial-failure case ("3 of 8 approved, then it
 stopped") disappears, because the whole thing commits or none of it does. The
 per-section button keeps calling `approve_section` unchanged.
 
-### Stage D — search and Ask AI
+### Stage D — search and Ask AI — BUILT
+
+Delivered as prompt 26 (`20260919090000-kerneopgaver-in-search-and-ai.sql`).
 
 Extend the three RPCs with a `UNION ALL` branch over
 `kerneopgave_sections.published_content`, and add a second functional GIN index
