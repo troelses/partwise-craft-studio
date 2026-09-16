@@ -141,7 +141,9 @@ subsection order.
   adding it now costs nothing. Searching for *"Fald"* will then find geriatri
   whether or not the word appears in a body paragraph.
 
-### Stage E — read view and export
+### Stage E — read view and export — BUILT
+
+Delivered as prompt 27. All five stages are now built.
 
 - `documentContent.buildContentBlocks` gains the same `prefer: 'draft' |
   'published'` notion `documentService.getDocument` already has, and
