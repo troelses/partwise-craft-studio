@@ -638,7 +638,7 @@ export const documentService = {
   // Returns the counts it approved. Re-running is a no-op: nothing is pending.
   approveDocument: async (
     documentId: string
-  ): Promise<{ sections: number; kerneopgaveSections: number }> => {
+  ): Promise<{ sections: number; kerneopgaveSections: number; collaborations: number }> => {
     const { data, error } = await supabase.rpc('approve_document', {
       doc_id: documentId,
     });
@@ -649,12 +649,17 @@ export const documentService = {
     }
 
     const row = (Array.isArray(data) ? data[0] : data) as
-      | { sections_approved?: number; kerneopgave_sections_approved?: number }
+      | {
+          sections_approved?: number;
+          kerneopgave_sections_approved?: number;
+          collaborations_approved?: number;
+        }
       | null;
 
     return {
       sections: row?.sections_approved ?? 0,
       kerneopgaveSections: row?.kerneopgave_sections_approved ?? 0,
+      collaborations: row?.collaborations_approved ?? 0,
     };
   },
 

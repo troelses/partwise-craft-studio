@@ -119,7 +119,7 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
     setConfirmAllOpen(false);
     setIsApprovingAll(true);
     try {
-      const { sections: approvedSections, kerneopgaveSections } =
+      const { sections: approvedSections, kerneopgaveSections, collaborations } =
         await documentService.approveDocument(documentId);
 
       toast({
@@ -127,8 +127,11 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
         description:
           `${approvedSections} ${approvedSections === 1 ? 'section' : 'sections'} and ` +
           `${kerneopgaveSections} kerneopgave ` +
-          `${kerneopgaveSections === 1 ? 'subsection' : 'subsections'} ` +
-          'were approved and published.',
+          `${kerneopgaveSections === 1 ? 'subsection' : 'subsections'}` +
+          (collaborations > 0
+            ? ` and ${collaborations} collaboration ${collaborations === 1 ? 'item' : 'items'}`
+            : '') +
+          ' were approved and published.',
       });
 
       await fetchSectionsForApproval();
