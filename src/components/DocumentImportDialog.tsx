@@ -393,8 +393,29 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
       }
 
       const items = payloads.flatMap(payload => payload.items);
+      const parsedCollaborations = payloads.flatMap(payload => payload.collaborations);
+
       if (items.length > 0) {
-        await kerneopgaverService.importKerneopgaver(newDocumentId, items);
+        const { faellesopgaverSectionIds } =
+          await kerneopgaverService.importKerneopgaver(newDocumentId, items);
+
+        // The subsection rows exist now, so the specialties can be keyed to
+        // them. Names are matched against the canonical list; an unmatched name
+        // is stored as written rather than refused.
+        const specialer = await collaborationsService.listSpecialer().catch(() => [] as Speciale[]);
+        const rows = parsedCollaborations.flatMap((list, index) => {
+          const sectionId = faellesopgaverSectionIds[index];
+          if (!sectionId) return [];
+          return list.map((entry, position) => ({
+            kerneopgaveSectionId: sectionId,
+            position: (position + 1) * 10,
+            specialtyId: collaborationsService.matchSpecialty(entry.specialtyName, specialer),
+            specialtyName: entry.specialtyName,
+            draftDescription: blocksToJson(entry.blocks),
+          }));
+        });
+
+        if (rows.length > 0) await collaborationsService.importCollaborations(rows);
       }
 
       toast({
@@ -575,6 +596,11 @@ const DocumentImportDialog: React.FC<DocumentImportDialogProps> = ({
                               {note}
                             </p>
                           ))}
+                          {collaborationSummary(item) && (
+                            <p className="text-xs text-muted-foreground">
+                              {collaborationSummary(item)}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
