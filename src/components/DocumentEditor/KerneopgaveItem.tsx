@@ -11,6 +11,7 @@ import {
 } from '@/services/kerneopgaverService';
 import RichTextEditor from '@/components/RichTextEditor';
 import { renderRichText } from '@/utils/richTextRenderer';
+import CollaborationList from '@/components/DocumentEditor/CollaborationList';
 
 interface KerneopgaveItemProps {
   kerneopgave: Kerneopgave;
@@ -139,8 +140,16 @@ const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete
             return (
               <div key={type}>
                 <div className="flex items-start justify-between">
-                  <h5 className="text-sm font-semibold mb-2">
+                  <h5 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     {KERNEOPGAVE_SECTION_LABELS[type]}
+                    {/* This subsection's rich text is the introduction to the
+                        list below it, so say so rather than leaving the two
+                        editors looking interchangeable. */}
+                    {type === 'faellesopgaver' && (
+                      <span className="text-xs font-normal text-gray-500 italic">
+                        indledning
+                      </span>
+                    )}
                   </h5>
                   {!isEditing && (
                     <Button
@@ -160,7 +169,11 @@ const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete
                       onChange={(val) =>
                         setPendingContent(prev => ({ ...prev, [type]: val }))
                       }
-                      placeholder={`Beskriv ${KERNEOPGAVE_SECTION_LABELS[type].toLowerCase()}…`}
+                      placeholder={
+                        type === 'faellesopgaver'
+                          ? 'Indledende tekst til fællesopgaverne…'
+                          : `Beskriv ${KERNEOPGAVE_SECTION_LABELS[type].toLowerCase()}…`
+                      }
                     />
                     <div className="flex space-x-2 justify-end">
                       <Button variant="outline" onClick={() => handleCancel(type)}>
@@ -177,6 +190,14 @@ const KerneopgaveItem: React.FC<KerneopgaveItemProps> = ({ kerneopgave, onDelete
                       ? renderRichText(content)
                       : <span className="text-gray-400 italic">Intet indhold endnu</span>}
                   </div>
+                )}
+
+                {/* The specialties themselves are rows in
+                    kerneopgave_collaborations, not prose. The subsection row has
+                    to exist before they can be keyed to it, which it always does
+                    — addKerneopgave creates all six. */}
+                {type === 'faellesopgaver' && getSectionId(type) && (
+                  <CollaborationList kerneopgaveSectionId={getSectionId(type)} />
                 )}
               </div>
             );
