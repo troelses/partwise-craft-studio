@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { documentService } from '@/services/documentService';
 import { kerneopgaverService } from '@/services/kerneopgaverService';
 import { renderRichText } from '@/utils/richTextRenderer';
+import KerneopgaveApprovalList from '@/components/KerneopgaveApprovalList';
 
 interface TeamLeadApprovalProps {
   documentId: string;
@@ -323,6 +324,14 @@ const TeamLeadApproval: React.FC<TeamLeadApprovalProps> = ({
           </div>
         );
       })}
+
+      {/* Section 2.2 lives in its own tables, so it is listed separately. It is
+          approved together with the sections above by approve_document. The
+          signal makes it reload when an approval changes anything. */}
+      <KerneopgaveApprovalList
+        documentId={documentId}
+        reloadSignal={sections.map(section => `${section.id}:${section.is_approved}`).join(',')}
+      />
 
       {sections.length === 0 && (
         <div className="text-center p-8 bg-white rounded-lg shadow-sm">

@@ -50,13 +50,28 @@ export const fetchKerneopgaver = async (documentId: string): Promise<Kerneopgave
  * Flatten a document into ordered blocks, splicing the kerneopgaver in at the
  * position of the section marked `section_key = 'kerneopgaver'`.
  *
- * `kerneopgave_sections` has no `published_content` column, so kerneopgaver are
- * always their draft text regardless of which export variant asked for them.
+ * Pass `{ prefer: 'published' }` to get the approved text for kerneopgaver as
+ * well as sections. Until migration 20260917090000 they had no published column
+ * at all, so "export the approved version" silently emitted drafts for section
+ * 2.2 — the largest part of the document.
  */
 export const buildContentBlocks = (
   sections: DocumentSection[],
-  kerneopgaver: Kerneopgave[]
+  kerneopgaver: Kerneopgave[],
+  opts?: { prefer?: 'draft' | 'published' }
 ): ContentBlock[] => {
+  // Which text a kerneopgave subsection contributes. `sections` were already
+  // resolved by whoever fetched them — documentService.getDocument takes the
+  // same option — so only the kerneopgaver need deciding here.
+  //
+  // An unapproved subsection falls back to its draft rather than vanishing,
+  // matching how getDocument treats a section that was never approved.
+  const preferPublished = opts?.prefer === 'published';
+  const subsectionContent = (sub?: { draftContent: string; publishedContent: string }): string => {
+    if (!sub) return '';
+    return preferPublished ? sub.publishedContent || sub.draftContent : sub.draftContent;
+  };
+
   const ordered = [...sections].sort((a, b) => a.order - b.order);
   const blocks: ContentBlock[] = [];
 
@@ -91,7 +106,7 @@ export const buildContentBlocks = (
           key: `kerneopgave-${item.id}-${type}`,
           kind: 'kerneopgaveSection',
           title: KERNEOPGAVE_SECTION_LABELS[type],
-          content: sub?.draftContent || '',
+          content: subsectionContent(sub),
           depth: 2,
         });
       }
@@ -150,7 +165,10 @@ export const blockContents = (blocks: ContentBlock[]): string[] =>
   blocks.map(block => block.content);
 
 /** Convenience for callers that have a Document and just need the blocks. */
-export const loadContentBlocks = async (document: Document): Promise<ContentBlock[]> => {
+export const loadContentBlocks = async (
+  document: Document,
+  opts?: { prefer?: 'draft' | 'published' }
+): Promise<ContentBlock[]> => {
   const kerneopgaver = await fetchKerneopgaver(document.id);
-  return buildContentBlocks(document.sections, kerneopgaver);
+  return buildContentBlocks(document.sections, kerneopgaver, opts);
 };

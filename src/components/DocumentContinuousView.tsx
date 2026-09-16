@@ -181,7 +181,10 @@ const DocumentContinuousView: React.FC<DocumentContinuousViewProps> = ({ documen
       templateSectionId: section.templateSection?.id,
       sectionKey: section.templateSection?.section_key ?? null,
     })),
-    kerneopgaver
+    kerneopgaver,
+    // This view already prefers published_content for sections; kerneopgaver
+    // now follow the same rule instead of always showing drafts.
+    { prefer: 'published' }
   ));
 
   // Footnote numbering runs continuously across the whole document, so it is

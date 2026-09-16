@@ -267,9 +267,15 @@ export type ExportVariant = 'published' | 'draft';
 const variantLabel = (variant: ExportVariant) =>
   variant === 'published' ? 'Godkendt version' : 'Arbejdsudkast';
 
-const buildBlocks = async (document: AppDocument): Promise<ContentBlock[]> => {
+// The variant has to reach the kerneopgaver too. `document.sections` were
+// already resolved by the caller, but section 2.2 lives in its own tables and
+// used to be emitted as draft text under both variants.
+const buildBlocks = async (
+  document: AppDocument,
+  variant: ExportVariant
+): Promise<ContentBlock[]> => {
   const kerneopgaver = await fetchKerneopgaver(document.id);
-  return buildContentBlocks(document.sections, kerneopgaver);
+  return buildContentBlocks(document.sections, kerneopgaver, { prefer: variant });
 };
 
 export const exportToWord = async (
@@ -277,7 +283,7 @@ export const exportToWord = async (
   variant: ExportVariant = 'draft'
 ) => {
   try {
-    const blocks = await buildBlocks(document);
+    const blocks = await buildBlocks(document, variant);
     const numbering = buildNumbering(blockContents(blocks));
     const ctx: WordCtx = { footnotes: {}, numbering };
 
@@ -402,7 +408,7 @@ export const exportToPDF = async (
   variant: ExportVariant = 'draft'
 ) => {
   try {
-    const blocks = await buildBlocks(document);
+    const blocks = await buildBlocks(document, variant);
     const contents = blockContents(blocks);
     const numbering = buildNumbering(contents);
     const entries = collectFootnotes(contents);
