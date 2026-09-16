@@ -6,7 +6,7 @@ export default defineTool({
   name: "search_documents",
   title: "Search documents",
   description:
-    "Full-text search the approved document text for a word or phrase, including the kerneopgaver in section 2.2/2.3 and their titles. Returns matching document ids, titles and match counts.",
+    "Full-text search the approved document text for a word or phrase, including the kerneopgaver in section 2.2/2.3, their titles, and the specialties each kerneopgave collaborates with. Returns matching document ids, titles and match counts.",
   inputSchema: { search_term: z.string().trim().min(1).describe("Word or phrase to search for.") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ search_term }, ctx) => {
